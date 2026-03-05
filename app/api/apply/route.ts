@@ -1,6 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 import { api } from "@/convex/_generated/api";
 import { convexHttp } from "@/lib/convex-client";
+
+const MAX_AVATAR_BYTES = 10 * 1024 * 1024; // 10MB
+const AVATAR_SIZE = 256; // 256x256px
+
+async function fetchAndResizeAvatar(url: string): Promise<{ storageId: string; storageUrl: string } | null> {
+  const res = await fetch(url);
+  if (!res.ok) return null;
+
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.startsWith("image/")) return null;
+
+  const buffer = Buffer.from(await res.arrayBuffer());
+  if (buffer.length > MAX_AVATAR_BYTES) return null;
+
+  const resized = await sharp(buffer)
+    .resize(AVATAR_SIZE, AVATAR_SIZE, { fit: "cover" })
+    .jpeg({ quality: 85 })
+    .toBuffer();
+
+  const uploadUrl = await convexHttp.mutation(api.uploads.generatePublicUploadUrl, {});
+  const uploadRes = await fetch(uploadUrl, {
+    method: "POST",
+    headers: { "Content-Type": "image/jpeg" },
+    body: resized,
+  });
+  if (!uploadRes.ok) return null;
+
+  const { storageId } = (await uploadRes.json()) as { storageId: string };
+  const storageUrl = await convexHttp.mutation(api.uploads.getStorageUrl, {
+    storageId: storageId as any,
+  });
+  if (!storageUrl) return null;
+
+  return { storageId, storageUrl };
+}
 
 // 10 requests per day per email
 const RATE_LIMIT = 10;
@@ -75,6 +111,17 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    let avatarKind: "url" | "upload" = "url";
+    let avatarUrl: string | undefined = body.avatarUrl;
+    let avatarStorageId: string | undefined;
+
+    const uploaded = await fetchAndResizeAvatar(body.avatarUrl);
+    if (uploaded) {
+      avatarKind = "upload";
+      avatarUrl = uploaded.storageUrl;
+      avatarStorageId = uploaded.storageId;
+    }
+
     const result = await convexHttp.mutation(api.applications.submit, {
       slug: body.slug,
       email: body.email,
@@ -83,8 +130,9 @@ export async function POST(req: NextRequest) {
       website: body.website || undefined,
       headline: body.headline || undefined,
       bio: body.bio || undefined,
-      avatarKind: "url",
-      avatarUrl: body.avatarUrl,
+      avatarKind,
+      avatarUrl,
+      avatarStorageId: avatarStorageId as any,
       socials: providedSocials.map(([platform, url]) => ({ platform, url: url! })),
       connectionTargetIds: [],
       connectionSlugs: body.connections ?? [],
