@@ -33,7 +33,7 @@ const navItems = [
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   let token: string | null = null;
   try {
-    token = await getToken();
+    token = (await getToken()) ?? null;
   } catch {
     token = null;
   }
