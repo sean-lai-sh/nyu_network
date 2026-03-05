@@ -22,7 +22,7 @@ export const listProfiles = query({
 
     const profiles = await ctx.db.query("profiles").collect();
 
-    return profiles
+    const filtered = profiles
       .map((profile) => ({
         id: profile._id,
         fullName: profile.fullName,
@@ -41,5 +41,20 @@ export const listProfiles = query({
           profile.website?.toLowerCase().includes(term)
       )
       .sort((a, b) => b.fireScore - a.fireScore || a.fullName.localeCompare(b.fullName));
+
+    const results = [];
+    for (const profile of filtered) {
+      const socialRows = await ctx.db
+        .query("profile_social_links")
+        .withIndex("by_profile", (q) => q.eq("profileId", profile.id))
+        .collect();
+
+      results.push({
+        ...profile,
+        socials: socialRows.map((s) => ({ platform: s.platform, url: s.url }))
+      });
+    }
+
+    return results;
   }
 });
