@@ -30,6 +30,7 @@ export const listProfiles = query({
 
         return {
           id: profile._id,
+          slug: profile.slug,
           fullName: profile.fullName,
           major: profile.major,
           website: profile.website,

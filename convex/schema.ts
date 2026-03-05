@@ -13,6 +13,7 @@ const socialPlatform = v.union(
 export default defineSchema({
   applications: defineTable({
     email: v.string(),
+    slug: v.string(),
     fullName: v.string(),
     major: v.string(),
     website: v.optional(v.string()),
@@ -49,6 +50,7 @@ export default defineSchema({
 
   profiles: defineTable({
     email: v.string(),
+    slug: v.string(),
     fullName: v.string(),
     major: v.string(),
     website: v.optional(v.string()),
@@ -65,6 +67,7 @@ export default defineSchema({
     updatedAt: v.number()
   })
     .index("by_email", ["email"])
+    .index("by_slug", ["slug"])
     .index("by_name", ["fullName"]),
 
   profile_social_links: defineTable({

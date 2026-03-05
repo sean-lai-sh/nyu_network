@@ -43,7 +43,7 @@ export default async function AdminRevisionsPage() {
             <RevisionReviewActions revisionId={row.revision._id} />
           </div>
 
-          <pre className="overflow-x-auto border-2 border-[var(--border)] bg-[#fff] p-3 text-xs">
+          <pre className="overflow-x-auto border-2 border-[var(--border)] bg-[var(--input-bg)] p-3 text-xs">
             {JSON.stringify(row.revision.payload, null, 2)}
           </pre>
         </article>

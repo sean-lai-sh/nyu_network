@@ -18,7 +18,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   }
 
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark">
       <body>
         <ThemeProvider>
           <Providers initialToken={token ?? null}>

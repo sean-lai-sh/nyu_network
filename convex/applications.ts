@@ -3,6 +3,7 @@ import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { assertBioWordLimit } from "./lib/profile";
 import { assertSocialRequirements, normalizeSocials } from "./lib/socials";
+import { validateSlugFormat, findNextAvailableSlug } from "./lib/slug";
 
 const socialInput = v.object({
   platform: v.union(v.literal("x"), v.literal("linkedin"), v.literal("email"), v.literal("github")),
@@ -36,6 +37,7 @@ export const searchApprovedConnections = query({
 
 export const submit = mutation({
   args: {
+    slug: v.string(),
     email: v.string(),
     fullName: v.string(),
     major: v.string(),
@@ -46,7 +48,8 @@ export const submit = mutation({
     avatarUrl: v.optional(v.string()),
     avatarStorageId: v.optional(v.id("_storage")),
     socials: v.array(socialInput),
-    connectionTargetIds: v.array(v.id("profiles"))
+    connectionTargetIds: v.array(v.id("profiles")),
+    connectionSlugs: v.optional(v.array(v.string()))
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -57,6 +60,35 @@ export const submit = mutation({
     }
     if (!args.major.trim()) {
       throw new ConvexError("Major is required.");
+    }
+
+    const slugError = validateSlugFormat(args.slug);
+    if (slugError) {
+      throw new ConvexError(slugError);
+    }
+
+    const existingSlug = await ctx.db
+      .query("profiles")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .first();
+    if (existingSlug) {
+      const suggestion = await findNextAvailableSlug(ctx.db, args.slug);
+      throw new ConvexError(`Slug '${args.slug}' is already taken. Next available: '${suggestion}'`);
+    }
+
+    // Resolve connection slugs to profile IDs
+    const slugTargetIds: Id<"profiles">[] = [];
+    if (args.connectionSlugs) {
+      for (const slug of args.connectionSlugs) {
+        const profile = await ctx.db
+          .query("profiles")
+          .withIndex("by_slug", (q) => q.eq("slug", slug))
+          .first();
+        if (!profile) {
+          throw new ConvexError(`No member found with slug '${slug}'.`);
+        }
+        slugTargetIds.push(profile._id);
+      }
     }
 
     const bio = args.bio?.trim();
@@ -93,6 +125,7 @@ export const submit = mutation({
 
     const applicationId = await ctx.db.insert("applications", {
       email,
+      slug: args.slug,
       fullName: args.fullName.trim(),
       major: args.major.trim(),
       website: args.website?.trim() || undefined,
@@ -115,7 +148,8 @@ export const submit = mutation({
       });
     }
 
-    const dedupedTargets = Array.from(new Set(args.connectionTargetIds));
+    const allTargetIds = [...args.connectionTargetIds, ...slugTargetIds];
+    const dedupedTargets = Array.from(new Set(allTargetIds));
     for (const targetProfileId of dedupedTargets) {
       const target = await ctx.db.get(targetProfileId as Id<"profiles">);
       if (!target) {

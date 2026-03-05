@@ -117,6 +117,7 @@ export const reviewApplication = mutation({
 
     const profileId = await ctx.db.insert("profiles", {
       email: application.email,
+      slug: application.slug,
       fullName: application.fullName,
       major: application.major,
       website: application.website,

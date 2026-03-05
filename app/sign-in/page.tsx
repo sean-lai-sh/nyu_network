@@ -69,8 +69,8 @@ export default function SignInPage() {
         {message ? <p className="text-sm text-[var(--success)]">{message}</p> : null}
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-        <Link href="/apply" className="mono text-xs underline">
-          Need approval first? Apply here.
+        <Link href="/post-api" className="mono text-xs underline">
+          Need approval first? Send a POST request.
         </Link>
       </div>
     </section>

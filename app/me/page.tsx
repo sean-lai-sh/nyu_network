@@ -184,9 +184,9 @@ export default function MePage() {
       <section className="brutal-card space-y-4 p-6">
         <AuthControls />
         <h2 className="text-2xl font-black">No approved profile yet</h2>
-        <p className="text-sm text-[var(--muted)]">This email is not approved yet. Submit `/apply` and wait for admin approval.</p>
-        <Link href="/apply" className="brutal-btn inline-block">
-          Go to Apply
+        <p className="text-sm text-[var(--muted)]">This email is not approved yet. Send a POST request and wait for admin approval.</p>
+        <Link href="/post-api" className="brutal-btn inline-block">
+          Send a POST Request
         </Link>
       </section>
     );
