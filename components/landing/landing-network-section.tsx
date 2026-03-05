@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useQuery } from "convex/react";
-import { AtSign, Flame, Github, Globe, Linkedin, Mail } from "lucide-react";
+import { AtSign, Flame, Github, Linkedin, Mail } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 
@@ -61,10 +61,6 @@ const websiteLabel = (website: string) => {
   } catch {
     return website;
   }
-};
-const websiteShortLabel = (website: string) => {
-  const label = websiteLabel(website);
-  return label.length <= 4 ? label : `${label.slice(0, 4)}...`;
 };
 const socialHref = (social: { platform: MemberSocialPlatform; url: string }) => {
   if (social.platform === "email") {
@@ -200,6 +196,14 @@ export function LandingNetworkSection() {
     () => (members ? [...members].sort((a, b) => b.fireScore - a.fireScore || a.fullName.localeCompare(b.fullName)) : []),
     [members]
   );
+  const maxSocialCount = useMemo(() => sortedMembers.reduce((max, member) => Math.max(max, member.socials?.length ?? 0), 0), [sortedMembers]);
+  const socialsColumnWidth = useMemo(() => {
+    const iconSlot = 20;
+    const gap = 8;
+    const basePadding = 18;
+    const estimatedWidth = basePadding + maxSocialCount * iconSlot + Math.max(0, maxSocialCount - 1) * gap;
+    return Math.min(170, Math.max(84, estimatedWidth));
+  }, [maxSocialCount]);
 
   const stopDragging = useCallback(() => {
     setDraggingId(null);
@@ -286,8 +290,8 @@ export function LandingNetworkSection() {
                     <th className="w-12 py-2 text-left">Profile</th>
                     <th className="w-[24%] py-2 text-left">Name</th>
                     <th className="w-[18%] py-2 text-left">Major</th>
-                    <th className="w-[22%] py-2 text-left">Website</th>
-                    <th className="w-[14%] py-2 text-left">Socials</th>
+                    <th className="py-2 text-left">Website</th>
+                    <th className="py-2 text-left" style={{ width: `${socialsColumnWidth}px` }}>Socials</th>
                     <th className="w-[8%] py-2 text-right">Fire</th>
                   </tr>
                 </thead>
@@ -309,11 +313,10 @@ export function LandingNetworkSection() {
                             href={websiteHref(member.website)}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-[var(--ink)] hover:text-[var(--accent)]"
+                            className="inline-flex w-full min-w-0 text-[var(--ink)] hover:text-[var(--accent)]"
                             title={websiteLabel(member.website)}
                           >
-                            <Globe className="h-3.5 w-3.5" strokeWidth={2.2} />
-                            <span className="truncate">{websiteShortLabel(member.website)}</span>
+                            <span className="truncate">{websiteLabel(member.website)}</span>
                           </a>
                         ) : (
                           <span className="text-[var(--muted)]">-</span>
@@ -321,7 +324,7 @@ export function LandingNetworkSection() {
                       </td>
                       <td className="py-2 pr-1">
                         {(member.socials ?? []).length ? (
-                          <div className="flex items-center gap-2 text-[var(--ink)]">
+                          <div className="flex items-center gap-2 whitespace-nowrap text-[var(--ink)]">
                             {(member.socials ?? []).map((social) => (
                               <a
                                 key={`${member.id}-${social.platform}-${social.url}`}

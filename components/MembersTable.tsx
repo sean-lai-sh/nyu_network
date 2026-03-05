@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { FaLinkedin, FaGithub } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
-import { Globe, Mail } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 export interface MemberRow {
     id: string;
@@ -28,10 +28,15 @@ export default function MembersTable({ members, searchQuery }: MembersTableProps
             return website.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
         }
     };
-    const websiteShortLabel = (website: string) => {
-        const label = websiteLabel(website);
-        return label.length <= 4 ? label : `${label.slice(0, 4)}...`;
-    };
+    const maxSocialCount = useMemo(() => members.reduce((max, member) => Math.max(max, member.socials?.length ?? 0), 0), [members]);
+    const linksColumnWidth = useMemo(() => {
+        const iconSlot = 22;
+        const gap = 8;
+        const basePadding = 18;
+        const estimatedWidth = basePadding + maxSocialCount * iconSlot + Math.max(0, maxSocialCount - 1) * gap;
+        return Math.min(190, Math.max(88, estimatedWidth));
+    }, [maxSocialCount]);
+    const tableStyle = { ['--links-col-width' as '--links-col-width']: `${linksColumnWidth}px` } as React.CSSProperties;
 
     const highlightText = (text: string | null | undefined) => {
         if (!text || !searchQuery) return text || '';
@@ -61,7 +66,7 @@ export default function MembersTable({ members, searchQuery }: MembersTableProps
                     <span className="search-results-placeholder">&nbsp;</span>
                 )}
             </div>
-            <table className="members-table">
+            <table className="members-table" style={tableStyle}>
                 <thead>
                     <tr>
                         <th>name</th>
@@ -107,7 +112,7 @@ export default function MembersTable({ members, searchQuery }: MembersTableProps
                                     )}
                                 </td>
                                 <td>{highlightText(member.major) || '\u2014'}</td>
-                                <td>
+                                <td className="site-cell">
                                     {member.website && member.website.trim() ? (
                                         <a
                                             href={websiteHref(member.website)}
@@ -116,8 +121,7 @@ export default function MembersTable({ members, searchQuery }: MembersTableProps
                                             className="site-link"
                                             title={websiteLabel(member.website)}
                                         >
-                                            <Globe size={14} />
-                                            <span>{websiteShortLabel(member.website)}</span>
+                                            {websiteLabel(member.website)}
                                         </a>
                                     ) : (
                                         <span className="table-placeholder">{'\u2014'}</span>

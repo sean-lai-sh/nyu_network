@@ -47,8 +47,11 @@ export default function AsciiFlame() {
 
         @media (max-width: 768px) {
           .flame-stack {
-            right: clamp(-16rem, -25vw, -4rem);
-            opacity: 0.65;
+            left: 50%;
+            right: auto;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.6;
           }
         }
       `}</style>

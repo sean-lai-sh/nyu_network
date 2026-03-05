@@ -116,7 +116,7 @@ export default function SearchableContent() {
     }, [graphData, searchQuery, filteredMemberIds]);
 
     return (
-        <main className="main-container">
+        <main className="main-container terminal-landing">
             <AsciiFlame />
             <nav className="top-nav">
                 <a href="/admin">admin</a>
