@@ -21,6 +21,12 @@ export const listProfiles = query({
     }
 
     const profiles = await ctx.db.query("profiles").collect();
+    const profilesWithSocials = await Promise.all(
+      profiles.map(async (profile) => {
+        const socials = await ctx.db
+          .query("profile_social_links")
+          .withIndex("by_profile", (q) => q.eq("profileId", profile._id))
+          .collect();
 
     const filtered = profiles
       .map((profile) => ({
@@ -38,7 +44,8 @@ export const listProfiles = query({
           profile.fullName.toLowerCase().includes(term) ||
           profile.headline?.toLowerCase().includes(term) ||
           profile.major.toLowerCase().includes(term) ||
-          profile.website?.toLowerCase().includes(term)
+          profile.website?.toLowerCase().includes(term) ||
+          profile.socials.some((social) => social.url.toLowerCase().includes(term))
       )
       .sort((a, b) => b.fireScore - a.fireScore || a.fullName.localeCompare(b.fullName));
 

@@ -1,8 +1,11 @@
 import { api } from "@/convex/_generated/api";
 import { RevisionReviewActions } from "@/components/admin/revision-review-actions";
 import { fetchAuthQuery } from "@/lib/auth-server";
+import { requireAdminPageAccess } from "@/lib/admin-page-auth";
 
 export default async function AdminRevisionsPage() {
+  await requireAdminPageAccess();
+
   let rows: any[] | null = null;
   let error: string | null = null;
 

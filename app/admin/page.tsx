@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { requireAdminPageAccess } from "@/lib/admin-page-auth";
 
-export default function AdminLandingPage() {
+export default async function AdminLandingPage() {
+  await requireAdminPageAccess();
+
   return (
     <section className="brutal-card space-y-4 p-6">
       <p className="mono text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Admin</p>

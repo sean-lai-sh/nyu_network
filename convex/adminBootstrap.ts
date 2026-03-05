@@ -12,6 +12,117 @@ type SeedAuthUser = {
 
 const getMemberAuthUserId = (user: SeedAuthUser) => (user.userId?.trim() ? user.userId : user._id);
 
+const assertBootstrapSecret = (secret: string) => {
+  const expected = process.env.ADMIN_BOOTSTRAP_SECRET;
+  if (!expected || secret !== expected) {
+    throw new ConvexError("Invalid bootstrap secret.");
+  }
+};
+
+const upsertCredentialAuthUser = async ({
+  ctx,
+  now,
+  email,
+  fullName,
+  password,
+  authContext
+}: {
+  ctx: any;
+  now: number;
+  email: string;
+  fullName: string;
+  password: string;
+  authContext: any;
+}) => {
+  const existingAuthUser = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+    model: "user",
+    where: [{ field: "email", operator: "eq", value: email }]
+  })) as SeedAuthUser | null;
+
+  let authAction: "created" | "updated" = "updated";
+  let authUserDocId = existingAuthUser?._id;
+  let authUserId = existingAuthUser ? getMemberAuthUserId(existingAuthUser) : undefined;
+
+  if (!existingAuthUser) {
+    const createdAuthUser = (await ctx.runMutation(components.betterAuth.adapter.create, {
+      input: {
+        model: "user",
+        data: {
+          name: fullName,
+          email,
+          emailVerified: true,
+          createdAt: now,
+          updatedAt: now
+        }
+      }
+    })) as SeedAuthUser;
+
+    authUserDocId = createdAuthUser._id;
+    authUserId = getMemberAuthUserId(createdAuthUser);
+    authAction = "created";
+  } else {
+    await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+      input: {
+        model: "user",
+        where: [{ field: "_id", operator: "eq", value: existingAuthUser._id }],
+        update: {
+          name: fullName,
+          email,
+          updatedAt: now
+        }
+      }
+    });
+  }
+
+  if (!authUserDocId || !authUserId) {
+    throw new ConvexError(`Failed to resolve auth user id for ${email}`);
+  }
+
+  const credentialPasswordHash = await authContext.password.hash(password);
+  const existingCredentialAccount = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+    model: "account",
+    where: [
+      { field: "providerId", operator: "eq", value: "credential" },
+      { field: "userId", operator: "eq", value: authUserDocId }
+    ]
+  })) as { _id: string } | null;
+
+  let credentialAction: "created" | "updated" = "updated";
+  if (!existingCredentialAccount) {
+    await ctx.runMutation(components.betterAuth.adapter.create, {
+      input: {
+        model: "account",
+        data: {
+          accountId: authUserDocId,
+          providerId: "credential",
+          userId: authUserDocId,
+          password: credentialPasswordHash,
+          createdAt: now,
+          updatedAt: now
+        }
+      }
+    });
+    credentialAction = "created";
+  } else {
+    await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+      input: {
+        model: "account",
+        where: [{ field: "_id", operator: "eq", value: existingCredentialAccount._id }],
+        update: {
+          password: credentialPasswordHash,
+          updatedAt: now
+        }
+      }
+    });
+  }
+
+  return {
+    authAction,
+    credentialAction,
+    authUserId
+  };
+};
+
 const SEED_PEOPLE = [
   {
     fullName: "Christopher Li",
@@ -46,10 +157,7 @@ export const seedAllowlist = mutation({
     secret: v.string()
   },
   handler: async (ctx, args) => {
-    const expected = process.env.ADMIN_BOOTSTRAP_SECRET;
-    if (!expected || args.secret !== expected) {
-      throw new ConvexError("Invalid bootstrap secret.");
-    }
+    assertBootstrapSecret(args.secret);
 
     const email = args.email.trim().toLowerCase();
     const existing = await ctx.db
@@ -73,10 +181,7 @@ export const seedPeople = mutation({
     secret: v.string()
   },
   handler: async (ctx, args) => {
-    const expected = process.env.ADMIN_BOOTSTRAP_SECRET;
-    if (!expected || args.secret !== expected) {
-      throw new ConvexError("Invalid bootstrap secret.");
-    }
+    assertBootstrapSecret(args.secret);
 
     const now = Date.now();
     const seeded: Array<{
@@ -155,87 +260,14 @@ export const seedPeople = mutation({
         });
       }
 
-      const existingAuthUser = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
-        model: "user",
-        where: [{ field: "email", operator: "eq", value: email }]
-      })) as SeedAuthUser | null;
-
-      let authAction: "created" | "updated" = "updated";
-      let authUserDocId = existingAuthUser?._id;
-      let authUserId = existingAuthUser ? getMemberAuthUserId(existingAuthUser) : undefined;
-
-      if (!existingAuthUser) {
-        const createdAuthUser = (await ctx.runMutation(components.betterAuth.adapter.create, {
-          input: {
-            model: "user",
-            data: {
-              name: person.fullName,
-              email,
-              emailVerified: true,
-              createdAt: now,
-              updatedAt: now
-            }
-          }
-        })) as SeedAuthUser;
-
-        authUserDocId = createdAuthUser._id;
-        authUserId = getMemberAuthUserId(createdAuthUser);
-        authAction = "created";
-      } else {
-        await ctx.runMutation(components.betterAuth.adapter.updateOne, {
-          input: {
-            model: "user",
-            where: [{ field: "_id", operator: "eq", value: existingAuthUser._id }],
-            update: {
-              name: person.fullName,
-              email,
-              updatedAt: now
-            }
-          }
-        });
-      }
-
-      if (!authUserDocId || !authUserId) {
-        throw new ConvexError(`Failed to resolve auth user id for ${email}`);
-      }
-
-      const credentialPasswordHash = await authContext.password.hash(person.password);
-      const existingCredentialAccount = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
-        model: "account",
-        where: [
-          { field: "providerId", operator: "eq", value: "credential" },
-          { field: "userId", operator: "eq", value: authUserDocId }
-        ]
-      })) as { _id: string } | null;
-
-      let credentialAction: "created" | "updated" = "updated";
-      if (!existingCredentialAccount) {
-        await ctx.runMutation(components.betterAuth.adapter.create, {
-          input: {
-            model: "account",
-            data: {
-              accountId: authUserDocId,
-              providerId: "credential",
-              userId: authUserDocId,
-              password: credentialPasswordHash,
-              createdAt: now,
-              updatedAt: now
-            }
-          }
-        });
-        credentialAction = "created";
-      } else {
-        await ctx.runMutation(components.betterAuth.adapter.updateOne, {
-          input: {
-            model: "account",
-            where: [{ field: "_id", operator: "eq", value: existingCredentialAccount._id }],
-            update: {
-              password: credentialPasswordHash,
-              updatedAt: now
-            }
-          }
-        });
-      }
+      const { authAction, credentialAction, authUserId } = await upsertCredentialAuthUser({
+        ctx,
+        now,
+        email,
+        fullName: person.fullName,
+        password: person.password,
+        authContext
+      });
 
       const memberByProfile = await ctx.db
         .query("member_accounts")
@@ -298,6 +330,81 @@ export const seedPeople = mutation({
       success: true,
       count: seeded.length,
       seeded
+    };
+  }
+});
+
+export const seedAdminAccount = mutation({
+  args: {
+    secret: v.string(),
+    email: v.string(),
+    name: v.optional(v.string()),
+    password: v.string()
+  },
+  handler: async (ctx, args) => {
+    assertBootstrapSecret(args.secret);
+
+    const email = args.email.trim().toLowerCase();
+    const password = args.password.trim();
+    const fullName = args.name?.trim() || "NYU Network Admin";
+    const now = Date.now();
+
+    if (!email) {
+      throw new ConvexError("Email is required.");
+    }
+
+    if (password.length < 8) {
+      throw new ConvexError("Password must be at least 8 characters.");
+    }
+
+    const auth = createAuth(ctx);
+    const authContext = await auth.$context;
+
+    const { authAction, credentialAction, authUserId } = await upsertCredentialAuthUser({
+      ctx,
+      now,
+      email,
+      fullName,
+      password,
+      authContext
+    });
+
+    const existingAllowlist = await ctx.db
+      .query("admin_allowlist")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
+
+    let allowlistAction: "created" | "already_exists" = "already_exists";
+    if (!existingAllowlist) {
+      await ctx.db.insert("admin_allowlist", {
+        email,
+        createdAt: now
+      });
+      allowlistAction = "created";
+    }
+
+    await ctx.db.insert("audit_log", {
+      actorAuthUserId: "seed-script",
+      action: "admin.seed.account",
+      entityType: "admin_account",
+      entityId: email,
+      metadata: {
+        email,
+        authUserId,
+        authAction,
+        credentialAction,
+        allowlistAction
+      },
+      createdAt: now
+    });
+
+    return {
+      success: true,
+      email,
+      authUserId,
+      authAction,
+      credentialAction,
+      allowlistAction
     };
   }
 });
