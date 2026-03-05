@@ -7,8 +7,7 @@ const socialPlatform = v.union(
   v.literal("x"),
   v.literal("linkedin"),
   v.literal("email"),
-  v.literal("github"),
-  v.literal("website")
+  v.literal("github")
 );
 
 export default defineSchema({
@@ -16,6 +15,7 @@ export default defineSchema({
     email: v.string(),
     fullName: v.string(),
     major: v.string(),
+    website: v.optional(v.string()),
     headline: v.optional(v.string()),
     bio: v.optional(v.string()),
     avatarKind,
@@ -51,6 +51,7 @@ export default defineSchema({
     email: v.string(),
     fullName: v.string(),
     major: v.string(),
+    website: v.optional(v.string()),
     headline: v.optional(v.string()),
     bio: v.optional(v.string()),
     school: v.string(),
@@ -79,6 +80,7 @@ export default defineSchema({
     payload: v.object({
       fullName: v.optional(v.string()),
       major: v.optional(v.string()),
+      website: v.optional(v.string()),
       headline: v.optional(v.string()),
       bio: v.optional(v.string()),
       avatarKind: v.optional(avatarKind),

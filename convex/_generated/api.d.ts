@@ -19,6 +19,7 @@ import type * as lib_authz from "../lib/authz.js";
 import type * as lib_constants from "../lib/constants.js";
 import type * as lib_graph from "../lib/graph.js";
 import type * as lib_graphState from "../lib/graphState.js";
+import type * as lib_profile from "../lib/profile.js";
 import type * as lib_socials from "../lib/socials.js";
 import type * as member from "../member.js";
 import type * as search from "../search.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   "lib/constants": typeof lib_constants;
   "lib/graph": typeof lib_graph;
   "lib/graphState": typeof lib_graphState;
+  "lib/profile": typeof lib_profile;
   "lib/socials": typeof lib_socials;
   member: typeof member;
   search: typeof search;

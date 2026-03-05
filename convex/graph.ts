@@ -103,7 +103,33 @@ export const getCurrentSnapshot = query({
       };
     }
 
-    return row.snapshot;
+    const profiles = await ctx.db.query("profiles").collect();
+    const profileById = new Map(profiles.map((profile) => [profile._id, profile]));
+
+    const nodes = await Promise.all(
+      row.snapshot.nodes.map(async (node) => {
+        const profile = profileById.get(node.id as Id<"profiles">);
+        if (!profile) return node;
+
+        if (profile.avatarKind === "upload" && profile.avatarStorageId) {
+          const freshAvatarUrl = await ctx.storage.getUrl(profile.avatarStorageId);
+          return {
+            ...node,
+            avatarUrl: freshAvatarUrl ?? undefined
+          };
+        }
+
+        return {
+          ...node,
+          avatarUrl: profile.avatarUrl
+        };
+      })
+    );
+
+    return {
+      ...row.snapshot,
+      nodes
+    };
   }
 });
 

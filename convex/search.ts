@@ -27,6 +27,7 @@ export const listProfiles = query({
         id: profile._id,
         fullName: profile.fullName,
         major: profile.major,
+        website: profile.website,
         headline: profile.headline,
         avatarUrl: profile.avatarUrl,
         fireScore: fireById.get(profile._id) ?? 0
@@ -36,7 +37,8 @@ export const listProfiles = query({
           !term ||
           profile.fullName.toLowerCase().includes(term) ||
           profile.headline?.toLowerCase().includes(term) ||
-          profile.major.toLowerCase().includes(term)
+          profile.major.toLowerCase().includes(term) ||
+          profile.website?.toLowerCase().includes(term)
       )
       .sort((a, b) => b.fireScore - a.fireScore || a.fullName.localeCompare(b.fullName));
   }

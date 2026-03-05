@@ -6,7 +6,7 @@ Pixel-brutalist light-mode member graph with pending applications, admin moderat
 
 - Public `/apply` intake with socials + initial connection picks
 - Pending-only intake: nothing becomes live until admin approval
-- Better Auth magic-link login integrated with Convex
+- Better Auth email/password login integrated with Convex
 - Member dashboard for:
   - profile revision submissions (admin approval required)
   - directed connections
@@ -33,11 +33,24 @@ bun install
 cp .env.example .env.local
 ```
 
+Set these required values:
+
+- `NEXT_PUBLIC_CONVEX_URL`
+- `NEXT_PUBLIC_CONVEX_SITE_URL`
+- `CONVEX_DEPLOYMENT`
+- `BETTER_AUTH_URL`
+- `BETTER_AUTH_SECRET`
+
 3. Configure Convex:
 
 ```bash
 bun run dev:convex
 ```
+
+Make sure Convex env also has these values:
+
+- `BETTER_AUTH_URL`
+- `BETTER_AUTH_SECRET`
 
 4. Run app + Convex together:
 
@@ -53,6 +66,12 @@ After deploying auth and signing in once, seed an admin allowlist email using:
 - args: `{ "email": "you@nyu.edu", "secret": "<ADMIN_BOOTSTRAP_SECRET>" }`
 
 Then use `/admin/applications` and `/admin/revisions`.
+
+Seed demo members (Sean + Chris) and credential accounts:
+
+- Convex mutation: `adminBootstrap.seedPeople`
+- args: `{ "secret": "<ADMIN_BOOTSTRAP_SECRET>" }`
+- Returns example passwords in the mutation result for local MVP/testing.
 
 ## Key architecture notes
 

@@ -102,6 +102,7 @@ export const reviewApplication = mutation({
       email: application.email,
       fullName: application.fullName,
       major: application.major,
+      website: application.website,
       headline: application.headline,
       bio: application.bio,
       school: "NYU",
@@ -263,6 +264,7 @@ export const reviewRevision = mutation({
     await ctx.db.patch(profile._id, {
       fullName: revision.payload.fullName ?? profile.fullName,
       major: revision.payload.major ?? profile.major,
+      website: revision.payload.website ?? profile.website,
       headline: revision.payload.headline ?? profile.headline,
       bio: revision.payload.bio ?? profile.bio,
       avatarKind: revision.payload.avatarKind ?? profile.avatarKind,

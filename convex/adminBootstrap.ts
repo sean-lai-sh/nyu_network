@@ -1,15 +1,25 @@
 import { ConvexError, v } from "convex/values";
+import { components } from "./_generated/api";
 import { mutation } from "./_generated/server";
+import { createAuth } from "./auth";
 import { markGraphDirty } from "./lib/graphState";
 import { assertSocialRequirements, normalizeSocials } from "./lib/socials";
+
+type SeedAuthUser = {
+  _id: string;
+  userId?: string | null;
+};
+
+const getMemberAuthUserId = (user: SeedAuthUser) => (user.userId?.trim() ? user.userId : user._id);
 
 const SEED_PEOPLE = [
   {
     fullName: "Christopher Li",
     email: "christopherli@nyu.edu",
     major: "CS",
+    password: "nyu-chris-2026",
+    website: "https://christopherli.dev",
     socials: [
-      { platform: "website" as const, url: "https://christopherli.dev" },
       { platform: "x" as const, url: "https://x.com/christopherrli" },
       { platform: "linkedin" as const, url: "https://www.linkedin.com/in/christopherrli/" },
       { platform: "email" as const, url: "mailto:christopherli@nyu.edu" },
@@ -20,8 +30,9 @@ const SEED_PEOPLE = [
     fullName: "Sean Lai",
     email: "seanlai@nyu.edu",
     major: "CS + Phil + Math",
+    password: "nyu-sean-2026",
+    website: "https://seanlai.co",
     socials: [
-      { platform: "website" as const, url: "https://seanlai.co" },
       { platform: "github" as const, url: "https://github.com/sean-lai-sh" },
       { platform: "email" as const, url: "mailto:seanlai@nyu.edu" },
       { platform: "x" as const, url: "https://x.com/sean-secure-shell" }
@@ -68,7 +79,18 @@ export const seedPeople = mutation({
     }
 
     const now = Date.now();
-    const seeded: Array<{ email: string; profileId: string; action: "created" | "updated" }> = [];
+    const seeded: Array<{
+      email: string;
+      profileId: string;
+      authUserId: string;
+      profileAction: "created" | "updated";
+      authAction: "created" | "updated";
+      credentialAction: "created" | "updated";
+      examplePassword: string;
+    }> = [];
+
+    const auth = createAuth(ctx);
+    const authContext = await auth.$context;
 
     for (const person of SEED_PEOPLE) {
       const email = person.email.trim().toLowerCase();
@@ -81,13 +103,14 @@ export const seedPeople = mutation({
       assertSocialRequirements(normalizedSocials);
 
       let profileId = existing?._id;
-      let action: "created" | "updated" = "updated";
+      let profileAction: "created" | "updated" = "updated";
 
       if (!existing) {
         profileId = await ctx.db.insert("profiles", {
           email,
           fullName: person.fullName,
           major: person.major,
+          website: person.website,
           headline: undefined,
           bio: undefined,
           school: "NYU",
@@ -100,11 +123,12 @@ export const seedPeople = mutation({
           createdAt: now,
           updatedAt: now
         });
-        action = "created";
+        profileAction = "created";
       } else {
         await ctx.db.patch(existing._id, {
           fullName: person.fullName,
           major: person.major,
+          website: person.website,
           updatedAt: now
         });
       }
@@ -131,19 +155,141 @@ export const seedPeople = mutation({
         });
       }
 
+      const existingAuthUser = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+        model: "user",
+        where: [{ field: "email", operator: "eq", value: email }]
+      })) as SeedAuthUser | null;
+
+      let authAction: "created" | "updated" = "updated";
+      let authUserDocId = existingAuthUser?._id;
+      let authUserId = existingAuthUser ? getMemberAuthUserId(existingAuthUser) : undefined;
+
+      if (!existingAuthUser) {
+        const createdAuthUser = (await ctx.runMutation(components.betterAuth.adapter.create, {
+          input: {
+            model: "user",
+            data: {
+              name: person.fullName,
+              email,
+              emailVerified: true,
+              createdAt: now,
+              updatedAt: now
+            }
+          }
+        })) as SeedAuthUser;
+
+        authUserDocId = createdAuthUser._id;
+        authUserId = getMemberAuthUserId(createdAuthUser);
+        authAction = "created";
+      } else {
+        await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+          input: {
+            model: "user",
+            where: [{ field: "_id", operator: "eq", value: existingAuthUser._id }],
+            update: {
+              name: person.fullName,
+              email,
+              updatedAt: now
+            }
+          }
+        });
+      }
+
+      if (!authUserDocId || !authUserId) {
+        throw new ConvexError(`Failed to resolve auth user id for ${email}`);
+      }
+
+      const credentialPasswordHash = await authContext.password.hash(person.password);
+      const existingCredentialAccount = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+        model: "account",
+        where: [
+          { field: "providerId", operator: "eq", value: "credential" },
+          { field: "userId", operator: "eq", value: authUserDocId }
+        ]
+      })) as { _id: string } | null;
+
+      let credentialAction: "created" | "updated" = "updated";
+      if (!existingCredentialAccount) {
+        await ctx.runMutation(components.betterAuth.adapter.create, {
+          input: {
+            model: "account",
+            data: {
+              accountId: authUserDocId,
+              providerId: "credential",
+              userId: authUserDocId,
+              password: credentialPasswordHash,
+              createdAt: now,
+              updatedAt: now
+            }
+          }
+        });
+        credentialAction = "created";
+      } else {
+        await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+          input: {
+            model: "account",
+            where: [{ field: "_id", operator: "eq", value: existingCredentialAccount._id }],
+            update: {
+              password: credentialPasswordHash,
+              updatedAt: now
+            }
+          }
+        });
+      }
+
+      const memberByProfile = await ctx.db
+        .query("member_accounts")
+        .withIndex("by_profile", (q) => q.eq("profileId", profileId))
+        .first();
+      const memberByAuth = await ctx.db
+        .query("member_accounts")
+        .withIndex("by_auth_user", (q) => q.eq("authUserId", authUserId))
+        .first();
+
+      if (memberByProfile && memberByAuth && memberByProfile._id !== memberByAuth._id) {
+        await ctx.db.delete(memberByAuth._id);
+      }
+
+      const linkedRow = memberByProfile ?? memberByAuth;
+
+      if (!linkedRow) {
+        await ctx.db.insert("member_accounts", {
+          authUserId,
+          profileId,
+          createdAt: now
+        });
+      } else {
+        await ctx.db.patch(linkedRow._id, {
+          authUserId,
+          profileId
+        });
+      }
+
       await ctx.db.insert("audit_log", {
         actorAuthUserId: "seed-script",
-        action: action === "created" ? "profile.seed.create" : "profile.seed.update",
+        action: profileAction === "created" ? "profile.seed.create" : "profile.seed.update",
         entityType: "profile",
         entityId: profileId,
         metadata: {
           email,
-          major: person.major
+          major: person.major,
+          website: person.website,
+          authUserId,
+          authAction,
+          credentialAction
         },
         createdAt: now
       });
 
-      seeded.push({ email, profileId, action });
+      seeded.push({
+        email,
+        profileId,
+        authUserId,
+        profileAction,
+        authAction,
+        credentialAction,
+        examplePassword: person.password
+      });
     }
 
     await markGraphDirty(ctx);

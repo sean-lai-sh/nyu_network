@@ -7,7 +7,7 @@ export async function GET() {
 
   return NextResponse.json(snapshot, {
     headers: {
-      "Cache-Control": "public, s-maxage=300, stale-while-revalidate=300"
+      "Cache-Control": "no-store"
     }
   });
 }

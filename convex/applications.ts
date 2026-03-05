@@ -1,10 +1,11 @@
 import { ConvexError, v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { assertBioWordLimit } from "./lib/profile";
 import { assertSocialRequirements, normalizeSocials } from "./lib/socials";
 
 const socialInput = v.object({
-  platform: v.union(v.literal("x"), v.literal("linkedin"), v.literal("email"), v.literal("github"), v.literal("website")),
+  platform: v.union(v.literal("x"), v.literal("linkedin"), v.literal("email"), v.literal("github")),
   url: v.string()
 });
 
@@ -26,6 +27,7 @@ export const searchApprovedConnections = query({
         id: profile._id,
         fullName: profile.fullName,
         major: profile.major,
+        website: profile.website,
         headline: profile.headline,
         avatarUrl: profile.avatarUrl
       }));
@@ -37,6 +39,7 @@ export const submit = mutation({
     email: v.string(),
     fullName: v.string(),
     major: v.string(),
+    website: v.optional(v.string()),
     headline: v.optional(v.string()),
     bio: v.optional(v.string()),
     avatarKind: v.union(v.literal("upload"), v.literal("url")),
@@ -55,6 +58,9 @@ export const submit = mutation({
     if (!args.major.trim()) {
       throw new ConvexError("Major is required.");
     }
+
+    const bio = args.bio?.trim();
+    assertBioWordLimit(bio);
 
     const normalizedSocials = normalizeSocials(args.socials);
     assertSocialRequirements(normalizedSocials);
@@ -89,8 +95,9 @@ export const submit = mutation({
       email,
       fullName: args.fullName.trim(),
       major: args.major.trim(),
+      website: args.website?.trim() || undefined,
       headline: args.headline?.trim() || undefined,
-      bio: args.bio?.trim() || undefined,
+      bio: bio || undefined,
       avatarKind: args.avatarKind,
       avatarUrl,
       avatarStorageId: args.avatarStorageId,

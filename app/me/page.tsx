@@ -6,9 +6,45 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { AuthControls } from "@/components/auth-controls";
 import { authClient } from "@/lib/auth-client";
-import { ALL_SOCIALS, CORE_SOCIALS, type SocialInput, type SocialPlatform } from "@/lib/socials";
+import { ALL_SOCIALS, type SocialInput, type SocialPlatform } from "@/lib/socials";
 
-const hasCoreSocial = (socials: SocialInput[]) => socials.some((social) => CORE_SOCIALS.includes(social.platform as (typeof CORE_SOCIALS)[number]));
+const BIO_WORD_LIMIT = 200;
+
+const countWords = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return 0;
+  return trimmed.split(/\s+/).length;
+};
+
+const createEmptySocials = (): Record<SocialPlatform, string> => {
+  return ALL_SOCIALS.reduce((result, platform) => {
+    result[platform] = "";
+    return result;
+  }, {} as Record<SocialPlatform, string>);
+};
+
+const socialsToMap = (socials: SocialInput[]): Record<SocialPlatform, string> => {
+  const map = createEmptySocials();
+  for (const social of socials) {
+    map[social.platform] = social.url;
+  }
+  return map;
+};
+
+const socialLabel = (platform: SocialPlatform) => {
+  switch (platform) {
+    case "x":
+      return "X";
+    case "linkedin":
+      return "LinkedIn";
+    case "email":
+      return "Email";
+    case "github":
+      return "GitHub";
+    default:
+      return platform;
+  }
+};
 
 export default function MePage() {
   const { data: session, isPending: authPending } = authClient.useSession();
@@ -24,12 +60,13 @@ export default function MePage() {
 
   const [fullName, setFullName] = useState("");
   const [major, setMajor] = useState("");
+  const [website, setWebsite] = useState("");
   const [headline, setHeadline] = useState("");
   const [bio, setBio] = useState("");
   const [avatarKind, setAvatarKind] = useState<"url" | "upload">("url");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [socials, setSocials] = useState<SocialInput[]>([]);
+  const [socials, setSocials] = useState<Record<SocialPlatform, string>>(() => createEmptySocials());
 
   const [connectionSearch, setConnectionSearch] = useState("");
   const [selectedConnections, setSelectedConnections] = useState<string[]>([]);
@@ -38,6 +75,10 @@ export default function MePage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadPreviewUrl, setUploadPreviewUrl] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     if (!session?.user || linkStatus === "linked" || linkStatus === "not_approved" || linkStatus === "linking") {
@@ -69,16 +110,54 @@ export default function MePage() {
 
     setFullName(self.profile.fullName);
     setMajor(self.profile.major ?? "");
+    setWebsite(self.profile.website ?? "");
     setHeadline(self.profile.headline ?? "");
     setBio(self.profile.bio ?? "");
     setAvatarKind(self.profile.avatarKind);
     setAvatarUrl(self.profile.avatarUrl ?? "");
-    setSocials(self.socials.map((social) => ({ platform: social.platform, url: social.url })));
+    setSocials(socialsToMap(self.socials.map((social) => ({ platform: social.platform, url: social.url }))));
     setSelectedConnections(self.connectionTargetIds);
     setSelectedVouches(self.vouchTargetIds);
   }, [self]);
 
-  const editableSocials = useMemo(() => (socials.length ? socials : [{ platform: "x" as SocialPlatform, url: "" }]), [socials]);
+  const bioWordCount = useMemo(() => countWords(bio), [bio]);
+
+  const normalizedSocials = useMemo<SocialInput[]>(
+    () =>
+      ALL_SOCIALS.map((platform) => ({
+        platform,
+        url: socials[platform].trim()
+      })),
+    [socials]
+  );
+
+  const initials = useMemo(() => {
+    const chunks = fullName
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "");
+    return chunks.join("") || "NY";
+  }, [fullName]);
+
+  useEffect(() => {
+    if (avatarKind !== "upload" || !avatarFile) {
+      setUploadPreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(avatarFile);
+    setUploadPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [avatarKind, avatarFile]);
+
+  const avatarPreviewSrc = useMemo(() => {
+    if (avatarKind === "upload") {
+      return uploadPreviewUrl || avatarUrl.trim();
+    }
+    return avatarUrl.trim();
+  }, [avatarKind, avatarUrl, uploadPreviewUrl]);
 
   if (authPending) {
     return <p className="text-sm text-[var(--muted)]">Loading authentication...</p>;
@@ -117,21 +196,12 @@ export default function MePage() {
     return <p className="text-sm text-red-600">{linkError ?? "Failed to initialize member account."}</p>;
   }
 
-  const updateSocial = (index: number, patch: Partial<SocialInput>) => {
-    setSocials((current) =>
-      current.map((social, socialIndex) =>
-        socialIndex === index
-          ? {
-              platform: (patch.platform as SocialPlatform | undefined) ?? social.platform,
-              url: patch.url ?? social.url
-            }
-          : social
-      )
-    );
+  const updateSocial = (platform: SocialPlatform, url: string) => {
+    setSocials((current) => ({
+      ...current,
+      [platform]: url
+    }));
   };
-
-  const addSocial = () => setSocials((current) => [...current, { platform: "x", url: "" }]);
-  const removeSocial = (index: number) => setSocials((current) => current.filter((_, socialIndex) => socialIndex !== index));
 
   const toggleConnection = (id: string) => {
     setSelectedConnections((current) => (current.includes(id) ? current.filter((value) => value !== id) : [...current, id]));
@@ -155,13 +225,13 @@ export default function MePage() {
     setMessage(null);
 
     try {
-      const cleanedSocials = editableSocials.map((social) => ({
-        platform: social.platform,
-        url: social.url.trim()
-      })).filter((social) => social.url);
+      if (bioWordCount > BIO_WORD_LIMIT) {
+        throw new Error(`Bio must be ${BIO_WORD_LIMIT} words or fewer.`);
+      }
 
-      if (!cleanedSocials.length || !hasCoreSocial(cleanedSocials)) {
-        throw new Error("At least one core social (X/LinkedIn/Email/GitHub) is required.");
+      const missingPlatforms = normalizedSocials.filter((social) => !social.url).map((social) => social.platform);
+      if (missingPlatforms.length > 0) {
+        throw new Error("Please provide all four socials: X, LinkedIn, Email, and GitHub.");
       }
 
       let uploadedStorageId: string | undefined;
@@ -183,12 +253,13 @@ export default function MePage() {
       await submitRevision({
         fullName,
         major,
+        website: website || undefined,
         headline,
         bio,
         avatarKind,
         avatarUrl: avatarKind === "url" ? avatarUrl : undefined,
         avatarStorageId: avatarKind === "upload" ? ((uploadedStorageId as any) ?? undefined) : undefined,
-        socials: cleanedSocials
+        socials: normalizedSocials
       });
 
       setMessage("Revision submitted and pending admin approval.");
@@ -229,6 +300,43 @@ export default function MePage() {
     }
   };
 
+  const savePassword = async () => {
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        throw new Error("Fill all password fields.");
+      }
+      if (newPassword.length < 8) {
+        throw new Error("New password must be at least 8 characters.");
+      }
+      if (newPassword !== confirmPassword) {
+        throw new Error("New password and confirm password must match.");
+      }
+
+      const result = await authClient.changePassword({
+        currentPassword,
+        newPassword,
+        revokeOtherSessions: true
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message ?? "Failed to change password.");
+      }
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setMessage("Password updated.");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Failed to update password.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section className="space-y-5">
       <div className="brutal-card flex flex-wrap items-center justify-between gap-3 p-6">
@@ -260,66 +368,74 @@ export default function MePage() {
                 <input className="brutal-input mt-1" value={major} onChange={(event) => setMajor(event.target.value)} />
               </label>
               <label className="block text-sm font-semibold">
+                Website (optional)
+                <input className="brutal-input mt-1" value={website} onChange={(event) => setWebsite(event.target.value)} placeholder="https://..." />
+              </label>
+              <label className="block text-sm font-semibold">
                 Headline
                 <input className="brutal-input mt-1" value={headline} onChange={(event) => setHeadline(event.target.value)} />
               </label>
               <label className="block text-sm font-semibold">
                 Bio
                 <textarea className="brutal-input mt-1 min-h-24" value={bio} onChange={(event) => setBio(event.target.value)} />
+                <p className={`mono mt-1 text-xs ${bioWordCount > BIO_WORD_LIMIT ? "text-red-600" : "text-[var(--muted)]"}`}>
+                  {bioWordCount}/{BIO_WORD_LIMIT} words
+                </p>
               </label>
 
-              <div className="space-y-2 border-2 border-[var(--border)] p-3">
-                <p className="mono text-xs uppercase">Avatar</p>
-                <div className="flex gap-2">
-                  <button type="button" className="brutal-btn bg-[var(--paper)]" onClick={() => setAvatarKind("url")}>
-                    URL
-                  </button>
-                  <button type="button" className="brutal-btn bg-[var(--paper)]" onClick={() => setAvatarKind("upload")}>
-                    Upload
-                  </button>
+              <div className="space-y-3 border border-[var(--border)] p-4">
+                <p className="mono text-xs uppercase tracking-[0.2em]">Profile Photo</p>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--paper)]">
+                    {avatarPreviewSrc ? (
+                      <img src={avatarPreviewSrc} alt="Avatar preview" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="mono text-xs uppercase text-[var(--muted)]">{initials}</span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className={`brutal-btn ${avatarKind === "url" ? "" : "bg-[var(--paper)]"}`}
+                        onClick={() => setAvatarKind("url")}
+                      >
+                        URL
+                      </button>
+                      <button
+                        type="button"
+                        className={`brutal-btn ${avatarKind === "upload" ? "" : "bg-[var(--paper)]"}`}
+                        onClick={() => setAvatarKind("upload")}
+                      >
+                        Upload
+                      </button>
+                    </div>
+                    {avatarKind === "url" ? (
+                      <input className="brutal-input" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} placeholder="https://..." />
+                    ) : (
+                      <input className="brutal-input" type="file" accept="image/*" onChange={(event) => setAvatarFile(event.target.files?.[0] ?? null)} />
+                    )}
+                  </div>
                 </div>
-                {avatarKind === "url" ? (
-                  <input className="brutal-input" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} placeholder="https://..." />
-                ) : (
-                  <input className="brutal-input" type="file" accept="image/*" onChange={(event) => setAvatarFile(event.target.files?.[0] ?? null)} />
-                )}
               </div>
 
-              <div className="space-y-2 border-2 border-[var(--border)] p-3">
-                <div className="flex items-center justify-between">
-                  <p className="mono text-xs uppercase">Socials</p>
-                  <button type="button" className="brutal-btn bg-[var(--paper)]" onClick={addSocial}>
-                    Add
-                  </button>
+              <div className="space-y-3 border border-[var(--border)] p-4">
+                <p className="mono text-xs uppercase tracking-[0.2em]">Social Links</p>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {ALL_SOCIALS.map((platform) => (
+                    <label key={platform} className="text-sm font-semibold">
+                      {socialLabel(platform)}
+                      <input
+                        className="brutal-input mt-1"
+                        value={socials[platform]}
+                        onChange={(event) => updateSocial(platform, event.target.value)}
+                        placeholder={platform === "email" ? "you@nyu.edu" : "https://..."}
+                      />
+                    </label>
+                  ))}
                 </div>
-                {editableSocials.map((social, index) => (
-                  <div key={`${social.platform}-${index}`} className="grid gap-2 md:grid-cols-[170px_1fr_auto]">
-                    <select
-                      className="brutal-input"
-                      value={social.platform}
-                      onChange={(event) => updateSocial(index, { platform: event.target.value as SocialPlatform })}
-                    >
-                      {ALL_SOCIALS.map((platform) => (
-                        <option key={platform} value={platform}>
-                          {platform}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      className="brutal-input"
-                      value={social.url}
-                      onChange={(event) => updateSocial(index, { url: event.target.value })}
-                    />
-                    <button
-                      type="button"
-                      className="brutal-btn bg-[var(--paper)]"
-                      onClick={() => removeSocial(index)}
-                      disabled={editableSocials.length === 1}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+                <p className="mono text-xs text-[var(--muted)]">Only X, LinkedIn, Email, and GitHub are accepted.</p>
               </div>
 
               <button type="button" className="brutal-btn" onClick={saveRevision} disabled={loading}>
@@ -348,6 +464,7 @@ export default function MePage() {
                       <span>
                         {option.fullName}
                         <span className="block text-xs text-[var(--muted)]">{option.major}</span>
+                        {option.website ? <span className="block text-xs text-[var(--muted)]">{option.website}</span> : null}
                       </span>
                     </label>
                   ))}
@@ -367,12 +484,51 @@ export default function MePage() {
                       <span>
                         {option.fullName}
                         <span className="block text-xs text-[var(--muted)]">{option.major}</span>
+                        {option.website ? <span className="block text-xs text-[var(--muted)]">{option.website}</span> : null}
                       </span>
                     </label>
                   ))}
                 </div>
                 <button type="button" className="brutal-btn" onClick={saveVouches} disabled={loading}>
                   Save Top-5
+                </button>
+              </article>
+
+              <article className="brutal-card space-y-3 p-6">
+                <h3 className="text-xl font-black">Password</h3>
+                <p className="mono text-xs text-[var(--muted)]">Change your member login password.</p>
+                <label className="block text-sm font-semibold">
+                  Current password
+                  <input
+                    className="brutal-input mt-1"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(event) => setCurrentPassword(event.target.value)}
+                    minLength={8}
+                  />
+                </label>
+                <label className="block text-sm font-semibold">
+                  New password
+                  <input
+                    className="brutal-input mt-1"
+                    type="password"
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    minLength={8}
+                  />
+                </label>
+                <label className="block text-sm font-semibold">
+                  Confirm new password
+                  <input
+                    className="brutal-input mt-1"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    minLength={8}
+                  />
+                </label>
+                <button type="button" className="brutal-btn" onClick={savePassword} disabled={loading}>
+                  Update Password
                 </button>
               </article>
             </aside>

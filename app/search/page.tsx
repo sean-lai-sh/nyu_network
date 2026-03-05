@@ -36,6 +36,7 @@ export default function SearchPage() {
               <h3 className="truncate text-lg font-black">{profile.fullName}</h3>
               <p className="truncate text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">{profile.major}</p>
               {profile.headline ? <p className="truncate text-sm text-[var(--muted)]">{profile.headline}</p> : null}
+              {profile.website ? <p className="truncate text-xs text-[var(--muted)]">{profile.website}</p> : null}
             </div>
             <div className="mono border-2 border-[var(--border)] bg-[var(--accent-soft)] px-3 py-2 text-xs font-bold uppercase">
               fire {profile.fireScore}

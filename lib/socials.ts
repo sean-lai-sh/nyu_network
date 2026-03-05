@@ -1,5 +1,5 @@
 export const CORE_SOCIALS = ["x", "linkedin", "email", "github"] as const;
-export const ALL_SOCIALS = [...CORE_SOCIALS, "website"] as const;
+export const ALL_SOCIALS = [...CORE_SOCIALS] as const;
 
 export type SocialPlatform = (typeof ALL_SOCIALS)[number];
 

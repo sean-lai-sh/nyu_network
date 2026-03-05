@@ -37,6 +37,7 @@ export default async function AdminApplicationsPage() {
               <h3 className="text-xl font-black">{row.application.fullName}</h3>
               <p className="mono text-xs text-[var(--muted)]">{row.application.email}</p>
               <p className="mono text-xs text-[var(--accent)]">{row.application.major}</p>
+              {row.application.website ? <p className="mono text-xs text-[var(--muted)]">{row.application.website}</p> : null}
               {row.application.headline ? <p className="text-sm text-[var(--muted)]">{row.application.headline}</p> : null}
             </div>
             <ApplicationReviewActions applicationId={row.application._id} />

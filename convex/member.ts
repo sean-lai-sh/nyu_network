@@ -2,11 +2,12 @@ import { ConvexError, v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { getAuthEmail, getAuthUserId, requireApprovedMember, requireAuthUser } from "./lib/authz";
+import { assertBioWordLimit } from "./lib/profile";
 import { assertSocialRequirements, normalizeSocials } from "./lib/socials";
 import { markGraphDirty } from "./lib/graphState";
 
 const socialInput = v.object({
-  platform: v.union(v.literal("x"), v.literal("linkedin"), v.literal("email"), v.literal("github"), v.literal("website")),
+  platform: v.union(v.literal("x"), v.literal("linkedin"), v.literal("email"), v.literal("github")),
   url: v.string()
 });
 
@@ -103,6 +104,7 @@ export const submitRevision = mutation({
   args: {
     fullName: v.optional(v.string()),
     major: v.optional(v.string()),
+    website: v.optional(v.string()),
     headline: v.optional(v.string()),
     bio: v.optional(v.string()),
     avatarKind: v.optional(v.union(v.literal("upload"), v.literal("url"))),
@@ -122,6 +124,7 @@ export const submitRevision = mutation({
     const hasAnyField =
       args.fullName !== undefined ||
       args.major !== undefined ||
+      args.website !== undefined ||
       args.headline !== undefined ||
       args.bio !== undefined ||
       args.avatarKind !== undefined ||
@@ -137,11 +140,15 @@ export const submitRevision = mutation({
       throw new ConvexError("Upload avatar selected but no uploaded file was provided.");
     }
 
+    const bio = args.bio?.trim();
+    assertBioWordLimit(bio);
+
     const payload = {
       fullName: args.fullName?.trim() || undefined,
       major: args.major?.trim() || undefined,
+      website: args.website?.trim() || undefined,
       headline: args.headline?.trim() || undefined,
-      bio: args.bio?.trim() || undefined,
+      bio: bio || undefined,
       avatarKind: args.avatarKind,
       avatarUrl: args.avatarUrl?.trim() || undefined,
       avatarStorageId: args.avatarStorageId,
