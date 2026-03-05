@@ -11,7 +11,7 @@ export interface MemberRow {
     headline?: string;
     avatarUrl?: string;
     fireScore: number;
-    socials: { platform: string; url: string }[];
+    socials?: { platform: string; url: string }[];
 }
 
 interface MembersTableProps {
@@ -32,8 +32,10 @@ export default function MembersTable({ members, searchQuery }: MembersTableProps
         );
     };
 
-    const getSocial = (socials: { platform: string; url: string }[], platform: string) =>
-        socials.find(s => s.platform === platform)?.url;
+    const getSocial = (
+        socials: { platform: string; url: string }[] | null | undefined,
+        platform: string
+    ) => socials?.find((s) => s.platform === platform)?.url;
 
     return (
         <div className="members-table-container">
@@ -56,100 +58,108 @@ export default function MembersTable({ members, searchQuery }: MembersTableProps
                     </tr>
                 </thead>
                 <tbody>
-                    {members.map((member, index) => (
-                        <tr key={member.id}>
-                            <td className="user-cell">
-                                {member.avatarUrl ? (
-                                    <img
-                                        src={member.avatarUrl}
-                                        alt={member.fullName}
-                                        className={`avatar ${searchQuery && index === 0 ? 'avatar-highlighted' : ''}`}
-                                    />
-                                ) : (
-                                    <div
-                                        className={`avatar ${searchQuery && index === 0 ? 'avatar-highlighted' : ''}`}
-                                        style={{ backgroundColor: '#e0e0e0' }}
-                                    />
-                                )}
-                                {member.website && member.website.trim() ? (
-                                    <a
-                                        href={member.website.startsWith('http') ? member.website : `https://${member.website}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="name-link"
-                                    >
-                                        {highlightText(member.fullName) || 'No name'}
-                                    </a>
-                                ) : (
-                                    <span>{highlightText(member.fullName) || 'No name'}</span>
-                                )}
-                            </td>
-                            <td>{highlightText(member.major) || '\u2014'}</td>
-                            <td>
-                                {member.website && member.website.trim() ? (
-                                    <a
-                                        href={member.website.startsWith('http') ? member.website : `https://${member.website}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="site-link"
-                                    >
-                                        {member.website.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')}
-                                    </a>
-                                ) : (
-                                    <span className="table-placeholder">{'\u2014'}</span>
-                                )}
-                            </td>
-                            <td>
-                                <div className="social-icons">
-                                    {getSocial(member.socials, 'x') && (
+                    {members.map((member, index) => {
+                        const socials = member.socials ?? [];
+                        const xUrl = getSocial(socials, 'x');
+                        const linkedinUrl = getSocial(socials, 'linkedin');
+                        const githubUrl = getSocial(socials, 'github');
+                        const emailUrl = getSocial(socials, 'email');
+
+                        return (
+                            <tr key={member.id}>
+                                <td className="user-cell">
+                                    {member.avatarUrl ? (
+                                        <img
+                                            src={member.avatarUrl}
+                                            alt={member.fullName}
+                                            className={`avatar ${searchQuery && index === 0 ? 'avatar-highlighted' : ''}`}
+                                        />
+                                    ) : (
+                                        <div
+                                            className={`avatar ${searchQuery && index === 0 ? 'avatar-highlighted' : ''}`}
+                                            style={{ backgroundColor: '#e0e0e0' }}
+                                        />
+                                    )}
+                                    {member.website && member.website.trim() ? (
                                         <a
-                                            href={getSocial(member.socials, 'x')}
+                                            href={member.website.startsWith('http') ? member.website : `https://${member.website}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="social-icon-link"
-                                            title="X / Twitter"
+                                            className="name-link"
                                         >
-                                            <FaXTwitter size={16} />
+                                            {highlightText(member.fullName) || 'No name'}
                                         </a>
+                                    ) : (
+                                        <span>{highlightText(member.fullName) || 'No name'}</span>
                                     )}
-                                    {getSocial(member.socials, 'linkedin') && (
+                                </td>
+                                <td>{highlightText(member.major) || '\u2014'}</td>
+                                <td>
+                                    {member.website && member.website.trim() ? (
                                         <a
-                                            href={getSocial(member.socials, 'linkedin')}
+                                            href={member.website.startsWith('http') ? member.website : `https://${member.website}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="social-icon-link"
-                                            title="LinkedIn"
+                                            className="site-link"
                                         >
-                                            <FaLinkedin size={16} />
+                                            {member.website.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')}
                                         </a>
-                                    )}
-                                    {getSocial(member.socials, 'github') && (
-                                        <a
-                                            href={getSocial(member.socials, 'github')}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="social-icon-link"
-                                            title="GitHub"
-                                        >
-                                            <FaGithub size={16} />
-                                        </a>
-                                    )}
-                                    {getSocial(member.socials, 'email') && (
-                                        <a
-                                            href={`mailto:${getSocial(member.socials, 'email')}`}
-                                            className="social-icon-link"
-                                            title="Email"
-                                        >
-                                            <Mail size={16} />
-                                        </a>
-                                    )}
-                                    {member.socials.length === 0 && (
+                                    ) : (
                                         <span className="table-placeholder">{'\u2014'}</span>
                                     )}
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
+                                </td>
+                                <td>
+                                    <div className="social-icons">
+                                        {xUrl && (
+                                            <a
+                                                href={xUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="social-icon-link"
+                                                title="X / Twitter"
+                                            >
+                                                <FaXTwitter size={16} />
+                                            </a>
+                                        )}
+                                        {linkedinUrl && (
+                                            <a
+                                                href={linkedinUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="social-icon-link"
+                                                title="LinkedIn"
+                                            >
+                                                <FaLinkedin size={16} />
+                                            </a>
+                                        )}
+                                        {githubUrl && (
+                                            <a
+                                                href={githubUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="social-icon-link"
+                                                title="GitHub"
+                                            >
+                                                <FaGithub size={16} />
+                                            </a>
+                                        )}
+                                        {emailUrl && (
+                                            <a
+                                                href={`mailto:${emailUrl}`}
+                                                className="social-icon-link"
+                                                title="Email"
+                                            >
+                                                <Mail size={16} />
+                                            </a>
+                                        )}
+                                        {socials.length === 0 && (
+                                            <span className="table-placeholder">{'\u2014'}</span>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
         </div>
