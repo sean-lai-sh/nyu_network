@@ -92,6 +92,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (!body.email.trim().toLowerCase().endsWith("@nyu.edu")) {
+    return NextResponse.json(
+      { error: "Email must be an @nyu.edu address." },
+      { status: 400 }
+    );
+  }
+
   const socials = body.socials ?? {};
   const providedSocials = Object.entries(socials).filter(([, v]) => v && v.trim() !== "");
   if (providedSocials.length === 0) {
