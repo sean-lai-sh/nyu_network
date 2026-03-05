@@ -73,8 +73,7 @@ export const submit = mutation({
       .first();
     if (existingSlug) {
       const suggestion = await findNextAvailableSlug(ctx.db, args.slug);
-      const hint = suggestion ? ` Next available: '${suggestion}'` : "";
-      throw new ConvexError(`Slug '${args.slug}' is already taken.${hint}`);
+      throw new ConvexError(`Slug '${args.slug}' is already taken. Next available: '${suggestion}'`);
     }
 
     // Resolve connection slugs to profile IDs

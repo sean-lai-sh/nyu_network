@@ -10,15 +10,14 @@ export function validateSlugFormat(slug: string): string | null {
   return null;
 }
 
-// less than 10 ppl w the same name - if it's more than that we're doing something wrong, approval wise
 export async function findNextAvailableSlug(
   db: GenericDatabaseReader<DataModel>,
   baseSlug: string
-): Promise<string | null> {
+): Promise<string> {
   // Strip existing numeric suffix to get the base (e.g. "john-doe-3" -> "john-doe")
   const base = baseSlug.replace(/-\d+$/, "");
   let suffix = 1;
-  while (suffix <= 10) {
+  while (true) {
     suffix++;
     const candidate = `${base}-${suffix}`;
     const existing = await db
@@ -27,5 +26,4 @@ export async function findNextAvailableSlug(
       .first();
     if (!existing) return candidate;
   }
-  return null;
 }
