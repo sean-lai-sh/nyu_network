@@ -8,3 +8,4 @@ out
 pnpm-lock.yaml
 bun.lock
 bun.lockb
+tsconfig.tsbuildinfo
