@@ -145,7 +145,7 @@ export default function MembersTable({ members, searchQuery }: MembersTableProps
                                         )}
                                         {emailUrl && (
                                             <a
-                                                href={`mailto:${emailUrl}`}
+                                                href={emailUrl.startsWith('mailto:') ? emailUrl : `mailto:${emailUrl}`}
                                                 className="social-icon-link"
                                                 title="Email"
                                             >
