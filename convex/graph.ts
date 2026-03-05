@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, query } from "./_generated/server";
+import { resolveProfileAvatarUrl } from "./lib/avatar";
 import { buildGraphSnapshot } from "./lib/graph";
 import { clearGraphDirty, getGraphMeta, markGraphDirty } from "./lib/graphState";
 
@@ -36,7 +37,7 @@ const buildFireScores = ({
   return flattened;
 };
 
-const rebuildSnapshot = async (ctx: any, now: number) => {
+export const rebuildGraphSnapshotNow = async (ctx: any, now: number) => {
   const profiles = await getApprovedProfiles(ctx);
   const approvedSet = new Set(profiles.map((profile) => profile._id));
 
@@ -110,18 +111,11 @@ export const getCurrentSnapshot = query({
       row.snapshot.nodes.map(async (node) => {
         const profile = profileById.get(node.id as Id<"profiles">);
         if (!profile) return node;
-
-        if (profile.avatarKind === "upload" && profile.avatarStorageId) {
-          const freshAvatarUrl = await ctx.storage.getUrl(profile.avatarStorageId);
-          return {
-            ...node,
-            avatarUrl: freshAvatarUrl ?? undefined
-          };
-        }
+        const avatarUrl = await resolveProfileAvatarUrl(ctx, profile);
 
         return {
           ...node,
-          avatarUrl: profile.avatarUrl
+          avatarUrl
         };
       })
     );
@@ -166,7 +160,7 @@ export const rebuildIfDirty = internalMutation({
       return { rebuilt: false, reason: "throttled" as const };
     }
 
-    await rebuildSnapshot(ctx, now);
+    await rebuildGraphSnapshotNow(ctx, now);
     return { rebuilt: true, reason: "dirty" as const };
   }
 });
@@ -174,7 +168,7 @@ export const rebuildIfDirty = internalMutation({
 export const forceRebuild = internalMutation({
   args: {},
   handler: async (ctx) => {
-    await rebuildSnapshot(ctx, Date.now());
+    await rebuildGraphSnapshotNow(ctx, Date.now());
     return { rebuilt: true };
   }
 });
@@ -188,7 +182,7 @@ export const ensureGraphInitialized = internalMutation({
       .first();
 
     if (!current) {
-      await rebuildSnapshot(ctx, Date.now());
+      await rebuildGraphSnapshotNow(ctx, Date.now());
       return { initialized: true };
     }
 

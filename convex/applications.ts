@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { resolveProfileAvatarUrl } from "./lib/avatar";
 import { assertBioWordLimit } from "./lib/profile";
 import { assertSocialRequirements, normalizeSocials } from "./lib/socials";
 import { validateSlugFormat, findNextAvailableSlug } from "./lib/slug";
@@ -20,18 +21,21 @@ export const searchApprovedConnections = query({
     const term = args.query?.trim().toLowerCase() ?? "";
     const profiles = await ctx.db.query("profiles").collect();
 
-    return profiles
+    const filteredProfiles = profiles
       .filter((profile) => !term || profile.fullName.toLowerCase().includes(term) || profile.major.toLowerCase().includes(term))
       .sort((a, b) => a.fullName.localeCompare(b.fullName))
-      .slice(0, 25)
-      .map((profile) => ({
+      .slice(0, 25);
+
+    return Promise.all(
+      filteredProfiles.map(async (profile) => ({
         id: profile._id,
         fullName: profile.fullName,
         major: profile.major,
         website: profile.website,
         headline: profile.headline,
-        avatarUrl: profile.avatarUrl
-      }));
+        avatarUrl: await resolveProfileAvatarUrl(ctx, profile)
+      }))
+    );
   }
 });
 

@@ -114,8 +114,17 @@ a {
     align-items: flex-start;
   }
 
+  .content-wrapper {
+    flex: 0 0 65%;
+    max-width: 65%;
+    min-width: 0;
+  }
+
   .graph-section {
-    max-width: 600px;
+    flex: 0 0 35%;
+    width: 35%;
+    max-width: 35%;
+    min-width: 0;
   }
 }
 
@@ -269,8 +278,8 @@ a {
 
 .members-table th:nth-child(1) { width: 28%; }
 .members-table th:nth-child(2) { width: 25%; }
-.members-table th:nth-child(3) { width: 27%; }
-.members-table th:nth-child(4) { width: 20%; padding-left: 1rem; }
+.members-table th:nth-child(3) { width: 20%; }
+.members-table th:nth-child(4) { width: 27%; padding-left: 0.5rem; }
 
 .members-table td {
   padding: 1rem 1rem 1rem 0;
@@ -280,8 +289,8 @@ a {
 }
 
 .members-table td:nth-child(4) {
-  padding-left: 1rem;
-  padding-right: 2rem;
+  padding-left: 0.5rem;
+  padding-right: 1rem;
 }
 
 .user-cell {
@@ -321,6 +330,9 @@ a {
 }
 
 .site-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   color: var(--foreground);
   transition: opacity 0.2s;
 }
@@ -369,16 +381,20 @@ a {
   display: block !important;
   width: 16px !important;
   height: 16px !important;
-  stroke: none !important;
+  color: currentColor !important;
+}
+
+.social-icon-link svg.lucide {
+  stroke: currentColor !important;
+  fill: none !important;
+}
+
+.social-icon-link svg:not(.lucide) {
   fill: currentColor !important;
 }
 
 .social-icon-link:hover {
   color: var(--hover-color);
-}
-
-[data-theme='dark'] .social-icon-link svg {
-  stroke: var(--foreground) !important;
 }
 
 /* ===== ASCII Background ===== */
@@ -463,6 +479,10 @@ a {
     gap: 1.5rem;
   }
 
+  .members-table-container {
+    overflow-x: hidden;
+  }
+
   .content-wrapper {
     gap: 1.5rem;
   }
@@ -478,6 +498,19 @@ a {
   .members-table th:nth-child(3),
   .members-table td:nth-child(3) {
     display: none;
+  }
+
+  .members-table th:nth-child(2),
+  .members-table td:nth-child(2) {
+    display: none;
+  }
+
+  .members-table th:nth-child(1) {
+    width: 62%;
+  }
+
+  .members-table th:nth-child(4) {
+    width: 38%;
   }
 
   .members-table th,

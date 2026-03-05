@@ -33,6 +33,12 @@ interface PositionedNode {
     y: number;
 }
 
+const NODE_OPACITY = {
+    default: '1',
+    highlighted: '1',
+    dimmed: '1',
+} as const;
+
 export default function NetworkGraph({ nodes, edges, highlightedNodeIds = [], searchQuery = '' }: NetworkGraphProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -149,9 +155,9 @@ export default function NetworkGraph({ nodes, edges, highlightedNodeIds = [], se
                     line.setAttribute('stroke-width', '2');
                     line.setAttribute('opacity', '0.6');
                 } else {
-                    line.setAttribute('stroke', isDark ? '#404040' : '#333');
-                    line.setAttribute('stroke-width', '1');
-                    line.setAttribute('opacity', '0.3');
+                    line.setAttribute('stroke', isDark ? '#c8bfb5' : '#9e9488');
+                    line.setAttribute('stroke-width', '1.5');
+                    line.setAttribute('opacity', '0.55');
                 }
                 svg.appendChild(line);
             }
@@ -172,13 +178,13 @@ export default function NetworkGraph({ nodes, edges, highlightedNodeIds = [], se
                     const isHighlighted = highlightedNodeIds.length === 0 || highlightedNodeIds.includes(node.id);
                     if (searchQuery && isHighlighted) {
                         img.style.filter = 'grayscale(0%)';
-                        img.style.opacity = '1';
+                        img.style.opacity = NODE_OPACITY.highlighted;
                     } else if (searchQuery && !isHighlighted) {
                         img.style.filter = 'grayscale(100%)';
-                        img.style.opacity = '0.3';
+                        img.style.opacity = NODE_OPACITY.dimmed;
                     } else {
                         img.style.filter = 'grayscale(100%)';
-                        img.style.opacity = '1';
+                        img.style.opacity = NODE_OPACITY.default;
                     }
                 }
             }
@@ -232,6 +238,7 @@ export default function NetworkGraph({ nodes, edges, highlightedNodeIds = [], se
             img.style.borderRadius = '50%';
             img.style.objectFit = 'cover';
             img.style.filter = 'grayscale(100%)';
+            img.style.opacity = NODE_OPACITY.default;
             img.style.transition = 'filter 0.3s ease, opacity 0.3s ease';
             img.style.display = 'block';
             img.draggable = false;
@@ -258,7 +265,7 @@ export default function NetworkGraph({ nodes, edges, highlightedNodeIds = [], se
 
             nodeDiv.addEventListener('mouseenter', () => {
                 img.style.filter = 'grayscale(0%)';
-                img.style.opacity = '1';
+                img.style.opacity = NODE_OPACITY.highlighted;
                 nameLabel.style.opacity = '1';
             });
 
@@ -266,13 +273,13 @@ export default function NetworkGraph({ nodes, edges, highlightedNodeIds = [], se
                 const isHighlighted = highlightedNodeIds.length === 0 || highlightedNodeIds.includes(node.id);
                 if (searchQuery && isHighlighted) {
                     img.style.filter = 'grayscale(0%)';
-                    img.style.opacity = '1';
+                    img.style.opacity = NODE_OPACITY.highlighted;
                 } else if (searchQuery && !isHighlighted) {
                     img.style.filter = 'grayscale(100%)';
-                    img.style.opacity = '0.3';
+                    img.style.opacity = NODE_OPACITY.dimmed;
                 } else {
                     img.style.filter = 'grayscale(100%)';
-                    img.style.opacity = '1';
+                    img.style.opacity = NODE_OPACITY.default;
                 }
                 nameLabel.style.opacity = '0';
             });

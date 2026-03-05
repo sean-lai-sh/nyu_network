@@ -62,6 +62,10 @@ const websiteLabel = (website: string) => {
     return website;
   }
 };
+const websiteShortLabel = (website: string) => {
+  const label = websiteLabel(website);
+  return label.length <= 4 ? label : `${label.slice(0, 4)}...`;
+};
 const socialHref = (social: { platform: MemberSocialPlatform; url: string }) => {
   if (social.platform === "email") {
     return social.url.startsWith("mailto:") ? social.url : `mailto:${social.url}`;
@@ -282,8 +286,8 @@ export function LandingNetworkSection() {
                     <th className="w-12 py-2 text-left">Profile</th>
                     <th className="w-[24%] py-2 text-left">Name</th>
                     <th className="w-[18%] py-2 text-left">Major</th>
-                    <th className="w-[32%] py-2 text-left">Website</th>
-                    <th className="w-[12%] py-2 text-left">Socials</th>
+                    <th className="w-[22%] py-2 text-left">Website</th>
+                    <th className="w-[14%] py-2 text-left">Socials</th>
                     <th className="w-[8%] py-2 text-right">Fire</th>
                   </tr>
                 </thead>
@@ -299,17 +303,23 @@ export function LandingNetworkSection() {
                       </td>
                       <td className="truncate py-2 pr-2 font-semibold">{member.fullName}</td>
                       <td className="truncate py-2 pr-2 text-[var(--muted)]">{member.major}</td>
-                      <td className="truncate py-2 pr-2">
+                      <td className="truncate py-2 pr-1">
                         {member.website ? (
-                          <a href={websiteHref(member.website)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[var(--ink)] hover:text-[var(--accent)]">
+                          <a
+                            href={websiteHref(member.website)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-[var(--ink)] hover:text-[var(--accent)]"
+                            title={websiteLabel(member.website)}
+                          >
                             <Globe className="h-3.5 w-3.5" strokeWidth={2.2} />
-                            <span className="truncate">{websiteLabel(member.website)}</span>
+                            <span className="truncate">{websiteShortLabel(member.website)}</span>
                           </a>
                         ) : (
                           <span className="text-[var(--muted)]">-</span>
                         )}
                       </td>
-                      <td className="py-2 pr-2">
+                      <td className="py-2 pr-1">
                         {(member.socials ?? []).length ? (
                           <div className="flex items-center gap-2 text-[var(--ink)]">
                             {(member.socials ?? []).map((social) => (

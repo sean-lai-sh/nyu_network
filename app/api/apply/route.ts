@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { convexHttp } from "@/lib/convex-client";
 
 const MAX_AVATAR_BYTES = 10 * 1024 * 1024; // 10MB
@@ -25,13 +26,13 @@ async function fetchAndResizeAvatar(url: string): Promise<{ storageId: string; s
   const uploadRes = await fetch(uploadUrl, {
     method: "POST",
     headers: { "Content-Type": "image/jpeg" },
-    body: resized,
+    body: new Uint8Array(resized),
   });
   if (!uploadRes.ok) return null;
 
   const { storageId } = (await uploadRes.json()) as { storageId: string };
   const storageUrl = await convexHttp.mutation(api.uploads.getStorageUrl, {
-    storageId: storageId as any,
+    storageId: storageId as Id<"_storage">,
   });
   if (!storageUrl) return null;
 
@@ -69,10 +70,13 @@ interface ApplyPayload {
   socials?: {
     x?: string;
     linkedin?: string;
+    email?: string;
     github?: string;
   };
   connections?: string[];
 }
+
+const SOCIAL_PLATFORMS = ["x", "linkedin", "email", "github"] as const;
 
 export async function POST(req: NextRequest) {
   let body: ApplyPayload;
@@ -100,10 +104,13 @@ export async function POST(req: NextRequest) {
   }
 
   const socials = body.socials ?? {};
-  const providedSocials = Object.entries(socials).filter(([, v]) => v && v.trim() !== "");
+  const providedSocials = SOCIAL_PLATFORMS.flatMap((platform) => {
+    const url = socials[platform]?.trim();
+    return url ? [{ platform, url }] : [];
+  });
   if (providedSocials.length === 0) {
     return NextResponse.json(
-      { error: "At least one social link is required (x, linkedin, github)." },
+      { error: "At least one social link is required (x, linkedin, email, github)." },
       { status: 400 }
     );
   }
@@ -136,8 +143,8 @@ export async function POST(req: NextRequest) {
       bio: body.bio || undefined,
       avatarKind,
       avatarUrl,
-      avatarStorageId: avatarStorageId as any,
-      socials: providedSocials.map(([platform, url]) => ({ platform, url: url! })),
+      avatarStorageId: avatarStorageId as Id<"_storage"> | undefined,
+      socials: providedSocials,
       connectionTargetIds: [],
       connectionSlugs: body.connections ?? [],
     });

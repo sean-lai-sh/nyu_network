@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaLinkedin, FaGithub } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
-import { Mail } from 'lucide-react';
+import { Globe, Mail } from 'lucide-react';
 
 export interface MemberRow {
     id: string;
@@ -20,6 +20,19 @@ interface MembersTableProps {
 }
 
 export default function MembersTable({ members, searchQuery }: MembersTableProps) {
+    const websiteHref = (website: string) => (website.startsWith('http://') || website.startsWith('https://') ? website : `https://${website}`);
+    const websiteLabel = (website: string) => {
+        try {
+            return new URL(websiteHref(website)).hostname.replace(/^www\./, '');
+        } catch {
+            return website.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+        }
+    };
+    const websiteShortLabel = (website: string) => {
+        const label = websiteLabel(website);
+        return label.length <= 4 ? label : `${label.slice(0, 4)}...`;
+    };
+
     const highlightText = (text: string | null | undefined) => {
         if (!text || !searchQuery) return text || '';
 
@@ -97,12 +110,14 @@ export default function MembersTable({ members, searchQuery }: MembersTableProps
                                 <td>
                                     {member.website && member.website.trim() ? (
                                         <a
-                                            href={member.website.startsWith('http') ? member.website : `https://${member.website}`}
+                                            href={websiteHref(member.website)}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="site-link"
+                                            title={websiteLabel(member.website)}
                                         >
-                                            {member.website.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')}
+                                            <Globe size={14} />
+                                            <span>{websiteShortLabel(member.website)}</span>
                                         </a>
                                     ) : (
                                         <span className="table-placeholder">{'\u2014'}</span>

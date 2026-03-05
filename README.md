@@ -62,19 +62,19 @@ bun run dev
 
 After deploying auth and signing in once, seed an admin allowlist email using:
 
-- Convex mutation: `adminBootstrap.seedAllowlist`
+- Convex mutation: `adminBootstrap:seedAllowlist`
 - args: `{ "email": "you@nyu.edu", "secret": "<ADMIN_BOOTSTRAP_SECRET>" }`
 
 Then use `/admin/applications` and `/admin/revisions`.
 
 Or create a full admin login + allowlist in one call:
 
-- Convex mutation: `adminBootstrap.seedAdminAccount`
+- Convex mutation: `adminBootstrap:seedAdminAccount`
 - args: `{ "secret": "<ADMIN_BOOTSTRAP_SECRET>", "email": "you@nyu.edu", "name": "Admin Name", "password": "your-password" }`
 
 Seed demo members (Sean + Chris) and credential accounts:
 
-- Convex mutation: `adminBootstrap.seedPeople`
+- Convex mutation: `adminBootstrap:seedPeople`
 - args: `{ "secret": "<ADMIN_BOOTSTRAP_SECRET>" }`
 - Returns example passwords in the mutation result for local MVP/testing.
 

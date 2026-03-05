@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   const uploadRes = await fetch(uploadUrl, {
     method: "POST",
     headers: { "Content-Type": "image/jpeg" },
-    body: resized,
+    body: new Uint8Array(resized),
   });
 
   if (!uploadRes.ok) {

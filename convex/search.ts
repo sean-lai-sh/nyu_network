@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
+import { resolveProfileAvatarUrl } from "./lib/avatar";
 
 export const listProfiles = query({
   args: {
@@ -23,10 +24,13 @@ export const listProfiles = query({
     const profiles = await ctx.db.query("profiles").collect();
     const profilesWithSocials = await Promise.all(
       profiles.map(async (profile) => {
-        const socialRows = await ctx.db
-          .query("profile_social_links")
-          .withIndex("by_profile", (q) => q.eq("profileId", profile._id))
-          .collect();
+        const [socialRows, avatarUrl] = await Promise.all([
+          ctx.db
+            .query("profile_social_links")
+            .withIndex("by_profile", (q) => q.eq("profileId", profile._id))
+            .collect(),
+          resolveProfileAvatarUrl(ctx, profile)
+        ]);
 
         return {
           id: profile._id,
@@ -35,7 +39,7 @@ export const listProfiles = query({
           major: profile.major,
           website: profile.website,
           headline: profile.headline,
-          avatarUrl: profile.avatarUrl,
+          avatarUrl,
           fireScore: fireById.get(profile._id) ?? 0,
           socials: socialRows.map((social) => ({ platform: social.platform, url: social.url }))
         };
