@@ -7,6 +7,7 @@ import MembersTable, { type MemberRow } from './MembersTable';
 import NetworkGraph from './NetworkGraph';
 import AsciiBackground from './AsciiBackground';
 import { Search } from 'lucide-react';
+import AsciiFlame from './AsciiFlame';
 
 function shuffleArray<T>(array: T[]): T[] {
     const shuffled = [...array];
@@ -103,7 +104,7 @@ export default function SearchableContent() {
 
     return (
         <main className="main-container">
-            <AsciiBackground />
+            <AsciiFlame />
             <nav className="top-nav">
                 <a href="/admin">admin</a>
                 <a href="/me">profile</a>

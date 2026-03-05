@@ -1,9 +1,26 @@
 import { ConvexError, v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
-import { getAuthUserId, requireAdmin } from "./lib/authz";
+import { getAuthEmail, getAuthUserId, requireAdmin } from "./lib/authz";
 import { markGraphDirty } from "./lib/graphState";
 import { assertSocialRequirements, normalizeSocials } from "./lib/socials";
+
+export const getAdminViewer = query({
+  args: {},
+  handler: async (ctx) => {
+    try {
+      const user = await requireAdmin(ctx);
+      return {
+        isAdmin: true as const,
+        email: getAuthEmail(user)
+      };
+    } catch {
+      return {
+        isAdmin: false as const
+      };
+    }
+  }
+});
 
 export const listPendingApplications = query({
   args: {},

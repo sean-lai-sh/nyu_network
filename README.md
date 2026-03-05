@@ -67,6 +67,11 @@ After deploying auth and signing in once, seed an admin allowlist email using:
 
 Then use `/admin/applications` and `/admin/revisions`.
 
+Or create a full admin login + allowlist in one call:
+
+- Convex mutation: `adminBootstrap.seedAdminAccount`
+- args: `{ "secret": "<ADMIN_BOOTSTRAP_SECRET>", "email": "you@nyu.edu", "name": "Admin Name", "password": "your-password" }`
+
 Seed demo members (Sean + Chris) and credential accounts:
 
 - Convex mutation: `adminBootstrap.seedPeople`
