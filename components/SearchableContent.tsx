@@ -32,6 +32,19 @@ export default function SearchableContent() {
     const [shuffleOrder, setShuffleOrder] = useState<string[]>([]);
 
     const allProfiles = useQuery(api.search.listProfiles, {});
+    const profileSocialRows = useQuery(api.search.listProfileSocials, {});
+
+    const socialsByProfileId = useMemo(() => {
+        const map = new Map<string, { platform: string; url: string }[]>();
+        if (!profileSocialRows) return map;
+        for (const row of profileSocialRows) {
+            const key = row.profileId;
+            const current = map.get(key) ?? [];
+            current.push({ platform: row.platform, url: row.url });
+            map.set(key, current);
+        }
+        return map;
+    }, [profileSocialRows]);
 
     // Fetch graph snapshot
     useEffect(() => {
@@ -60,7 +73,7 @@ export default function SearchableContent() {
             headline: p.headline ?? undefined,
             avatarUrl: p.avatarUrl ?? undefined,
             fireScore: p.fireScore,
-            socials: p.socials,
+            socials: (p.socials && p.socials.length > 0) ? p.socials : (socialsByProfileId.get(p.id) ?? []),
         }));
 
         // Apply shuffle order when not searching
@@ -80,7 +93,7 @@ export default function SearchableContent() {
         }
 
         return result;
-    }, [allProfiles, searchQuery, shuffleOrder]);
+    }, [allProfiles, searchQuery, shuffleOrder, socialsByProfileId]);
 
     const filteredMemberIds = new Set<string>(filteredMembers.map(m => m.id));
 

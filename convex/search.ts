@@ -23,22 +23,26 @@ export const listProfiles = query({
     const profiles = await ctx.db.query("profiles").collect();
     const profilesWithSocials = await Promise.all(
       profiles.map(async (profile) => {
-        const socials = await ctx.db
+        const socialRows = await ctx.db
           .query("profile_social_links")
           .withIndex("by_profile", (q) => q.eq("profileId", profile._id))
           .collect();
 
-    const filtered = profiles
-      .map((profile) => ({
-        id: profile._id,
-        slug: profile.slug,
-        fullName: profile.fullName,
-        major: profile.major,
-        website: profile.website,
-        headline: profile.headline,
-        avatarUrl: profile.avatarUrl,
-        fireScore: fireById.get(profile._id) ?? 0
-      }))
+        return {
+          id: profile._id,
+          slug: profile.slug,
+          fullName: profile.fullName,
+          major: profile.major,
+          website: profile.website,
+          headline: profile.headline,
+          avatarUrl: profile.avatarUrl,
+          fireScore: fireById.get(profile._id) ?? 0,
+          socials: socialRows.map((social) => ({ platform: social.platform, url: social.url }))
+        };
+      })
+    );
+
+    return profilesWithSocials
       .filter(
         (profile) =>
           !term ||
@@ -49,20 +53,17 @@ export const listProfiles = query({
           profile.socials.some((social) => social.url.toLowerCase().includes(term))
       )
       .sort((a, b) => b.fireScore - a.fireScore || a.fullName.localeCompare(b.fullName));
+  }
+});
 
-    const results = [];
-    for (const profile of filtered) {
-      const socialRows = await ctx.db
-        .query("profile_social_links")
-        .withIndex("by_profile", (q) => q.eq("profileId", profile.id))
-        .collect();
-
-      results.push({
-        ...profile,
-        socials: socialRows.map((s) => ({ platform: s.platform, url: s.url }))
-      });
-    }
-
-    return results;
+export const listProfileSocials = query({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db.query("profile_social_links").collect();
+    return rows.map((row) => ({
+      profileId: row.profileId,
+      platform: row.platform,
+      url: row.url
+    }));
   }
 });
