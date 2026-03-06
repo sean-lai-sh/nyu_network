@@ -15,6 +15,7 @@ import type * as auth from "../auth.js";
 import type * as crons from "../crons.js";
 import type * as graph from "../graph.js";
 import type * as http from "../http.js";
+import type * as indexing from "../indexing.js";
 import type * as lib_authz from "../lib/authz.js";
 import type * as lib_avatar from "../lib/avatar.js";
 import type * as lib_constants from "../lib/constants.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   graph: typeof graph;
   http: typeof http;
+  indexing: typeof indexing;
   "lib/authz": typeof lib_authz;
   "lib/avatar": typeof lib_avatar;
   "lib/constants": typeof lib_constants;

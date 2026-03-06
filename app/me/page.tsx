@@ -10,6 +10,23 @@ import { ALL_SOCIALS, type SocialInput, type SocialPlatform } from "@/lib/social
 
 const BIO_WORD_LIMIT = 200;
 
+const ARCH = `   ___________________________________________________
+  |___________________________________________________|
+  | .:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.  |
+  | :+==+=========+===========+=========+==+======:  |
+  | .:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.:.  |
+  |___________________________________________________|
+  |          |                           |           |
+  |          |   _______________________  |           |
+  |          |  /                       \\ |           |
+  |          | |                         ||           |
+  |          | |                         ||           |
+  |          | |                         ||           |
+  |          | |                         ||           |
+  |__________|_|                         |_|___________|
+             |                           |
+             |___________________________|`;
+
 const countWords = (value: string) => {
   const trimmed = value.trim();
   if (!trimmed) return 0;
@@ -160,61 +177,80 @@ export default function MePage() {
   }, [avatarKind, avatarUrl, uploadPreviewUrl]);
 
   if (authPending) {
-    return <p className="text-sm text-[var(--muted)]">Loading authentication...</p>;
+    return (
+      <div className="tm-page tm-card p-8">
+        <p className="text-xs text-[var(--muted)]">Authenticating...</p>
+      </div>
+    );
   }
 
   if (!session?.user) {
     return (
-      <section className="brutal-card space-y-4 p-6">
-        <h2 className="text-3xl font-black">Member Dashboard</h2>
-        <p className="text-sm text-[var(--muted)]">Sign in first, then your approved profile will be linked automatically by email.</p>
-        <Link href="/sign-in" className="brutal-btn inline-block">
-          Sign In
-        </Link>
-      </section>
+      <div className="tm-page space-y-px">
+        <div className="tm-card p-8 flex items-start justify-between gap-8">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--muted)] mb-4">Member / Dashboard</p>
+            <h1 className="text-3xl font-black tracking-tight mb-2">Member Dashboard</h1>
+            <p className="text-sm text-[var(--muted)] mb-6">
+              Sign in first, then your approved profile will be linked automatically by email.
+            </p>
+            <Link href="/sign-in" className="tm-btn">Sign In</Link>
+          </div>
+          <pre className="tm-ascii hidden md:block" aria-hidden="true">{ARCH}</pre>
+        </div>
+      </div>
     );
   }
 
   if (linkStatus === "linking") {
-    return <p className="text-sm text-[var(--muted)]">Linking your account to approved profile...</p>;
+    return (
+      <div className="tm-page tm-card p-8">
+        <p className="text-xs text-[var(--muted)]">Linking account to approved profile...</p>
+      </div>
+    );
   }
 
   if (linkStatus === "not_approved") {
     return (
-      <section className="brutal-card space-y-4 p-6">
-        <AuthControls />
-        <h2 className="text-2xl font-black">No approved profile yet</h2>
-        <p className="text-sm text-[var(--muted)]">This email is not approved yet. Send a POST request and wait for admin approval.</p>
-        <Link href="/post-api" className="brutal-btn inline-block">
-          Send a POST Request
-        </Link>
-      </section>
+      <div className="tm-page space-y-px">
+        <div className="tm-card p-8 flex items-start justify-between gap-8">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--muted)] mb-4">Member / Dashboard</p>
+            <h1 className="text-3xl font-black tracking-tight mb-2">No Approved Profile</h1>
+            <p className="text-sm text-[var(--muted)] mb-6">
+              This email is not approved yet. Submit an application and wait for admin review.
+            </p>
+            <div className="flex gap-3 flex-wrap">
+              <Link href="/post-api" className="tm-btn">Submit Application</Link>
+              <AuthControls />
+            </div>
+          </div>
+          <pre className="tm-ascii hidden md:block" aria-hidden="true">{ARCH}</pre>
+        </div>
+      </div>
     );
   }
 
   if (linkStatus === "error") {
-    return <p className="text-sm text-red-600">{linkError ?? "Failed to initialize member account."}</p>;
+    return (
+      <div className="tm-page tm-card p-8">
+        <p className="text-xs text-red-600">{linkError ?? "Failed to initialize member account."}</p>
+      </div>
+    );
   }
 
   const updateSocial = (platform: SocialPlatform, url: string) => {
-    setSocials((current) => ({
-      ...current,
-      [platform]: url
-    }));
+    setSocials((current) => ({ ...current, [platform]: url }));
   };
 
   const toggleConnection = (id: string) => {
-    setSelectedConnections((current) => (current.includes(id) ? current.filter((value) => value !== id) : [...current, id]));
+    setSelectedConnections((current) => (current.includes(id) ? current.filter((v) => v !== id) : [...current, id]));
   };
 
   const toggleVouch = (id: string) => {
     setSelectedVouches((current) => {
-      if (current.includes(id)) {
-        return current.filter((value) => value !== id);
-      }
-      if (current.length >= 5) {
-        return current;
-      }
+      if (current.includes(id)) return current.filter((v) => v !== id);
+      if (current.length >= 5) return current;
       return [...current, id];
     });
   };
@@ -229,7 +265,7 @@ export default function MePage() {
         throw new Error(`Bio must be ${BIO_WORD_LIMIT} words or fewer.`);
       }
 
-      const missingPlatforms = normalizedSocials.filter((social) => !social.url).map((social) => social.platform);
+      const missingPlatforms = normalizedSocials.filter((s) => !s.url).map((s) => s.platform);
       if (missingPlatforms.length > 0) {
         throw new Error("Please provide all four socials: X, LinkedIn, Email, and GitHub.");
       }
@@ -239,9 +275,7 @@ export default function MePage() {
         const uploadUrl = await generateUploadUrl({});
         const uploadResponse = await fetch(uploadUrl, {
           method: "POST",
-          headers: {
-            "Content-Type": avatarFile.type
-          },
+          headers: { "Content-Type": avatarFile.type },
           body: avatarFile
         });
 
@@ -274,7 +308,6 @@ export default function MePage() {
     setLoading(true);
     setError(null);
     setMessage(null);
-
     try {
       await setConnections({ targetProfileIds: selectedConnections as any });
       setMessage("Connections updated.");
@@ -289,7 +322,6 @@ export default function MePage() {
     setLoading(true);
     setError(null);
     setMessage(null);
-
     try {
       await setTopVouches({ targetProfileIds: selectedVouches as any });
       setMessage("Top-5 vouches updated.");
@@ -304,7 +336,6 @@ export default function MePage() {
     setLoading(true);
     setError(null);
     setMessage(null);
-
     try {
       if (!currentPassword || !newPassword || !confirmPassword) {
         throw new Error("Fill all password fields.");
@@ -338,206 +369,247 @@ export default function MePage() {
   };
 
   return (
-    <section className="space-y-5">
-      <div className="brutal-card flex flex-wrap items-center justify-between gap-3 p-6">
+    <div className="tm-page space-y-px">
+      {/* Header */}
+      <div className="tm-card p-8 flex items-start justify-between gap-8">
         <div>
-          <p className="mono text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Member Dashboard</p>
-          <h2 className="text-3xl font-black">Manage Profile and Graph Inputs</h2>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--muted)] mb-3">Member / Dashboard</p>
+          <h1 className="text-3xl font-black tracking-tight mb-1">Manage Profile</h1>
+          <p className="text-sm text-[var(--muted)]">Edits stay pending until an admin approves them.</p>
+          {self?.pendingRevision ? (
+            <p className="text-[10px] text-[var(--accent)] mt-2 uppercase tracking-wider">
+              Revision pending · {new Date(self.pendingRevision.createdAt).toLocaleString()}
+            </p>
+          ) : null}
         </div>
-        <AuthControls />
+        <div className="flex items-start gap-4">
+          <AuthControls />
+          <pre className="tm-ascii hidden md:block" aria-hidden="true">{ARCH}</pre>
+        </div>
       </div>
 
-      {!self ? <p className="text-sm text-[var(--muted)]">Loading profile...</p> : null}
+      {!self ? (
+        <div className="tm-card p-8">
+          <p className="text-xs text-[var(--muted)]">Loading profile...</p>
+        </div>
+      ) : null}
 
       {self ? (
         <>
-          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-            <article className="brutal-card space-y-4 p-6">
-              <h3 className="text-xl font-black">Profile Revision</h3>
-              <p className="text-sm text-[var(--muted)]">Edits stay pending until an admin approves them.</p>
-              {self.pendingRevision ? (
-                <p className="mono text-xs text-[var(--accent)]">Pending revision submitted {new Date(self.pendingRevision.createdAt).toLocaleString()}</p>
-              ) : null}
+          <div className="grid gap-px lg:grid-cols-[1.1fr_0.9fr] bg-[var(--border)]">
+            {/* Profile Revision */}
+            <div className="tm-card space-y-px">
+              <div className="p-6">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] mb-4">Profile Revision</p>
 
-              <label className="block text-sm font-semibold">
-                Full Name
-                <input className="brutal-input mt-1" value={fullName} onChange={(event) => setFullName(event.target.value)} />
-              </label>
-              <label className="block text-sm font-semibold">
-                Major
-                <input className="brutal-input mt-1" value={major} onChange={(event) => setMajor(event.target.value)} />
-              </label>
-              <label className="block text-sm font-semibold">
-                Website (optional)
-                <input className="brutal-input mt-1" value={website} onChange={(event) => setWebsite(event.target.value)} placeholder="https://..." />
-              </label>
-              <label className="block text-sm font-semibold">
-                Headline
-                <input className="brutal-input mt-1" value={headline} onChange={(event) => setHeadline(event.target.value)} />
-              </label>
-              <label className="block text-sm font-semibold">
-                Bio
-                <textarea className="brutal-input mt-1 min-h-24" value={bio} onChange={(event) => setBio(event.target.value)} />
-                <p className={`mono mt-1 text-xs ${bioWordCount > BIO_WORD_LIMIT ? "text-red-600" : "text-[var(--muted)]"}`}>
-                  {bioWordCount}/{BIO_WORD_LIMIT} words
-                </p>
-              </label>
+                <div className="space-y-3">
+                  <label className="block">
+                    <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted)]">Full Name</span>
+                    <input className="tm-input mt-1" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                  </label>
+                  <label className="block">
+                    <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted)]">Major</span>
+                    <input className="tm-input mt-1" value={major} onChange={(e) => setMajor(e.target.value)} />
+                  </label>
+                  <label className="block">
+                    <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted)]">Website (optional)</span>
+                    <input className="tm-input mt-1" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://..." />
+                  </label>
+                  <label className="block">
+                    <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted)]">Headline</span>
+                    <input className="tm-input mt-1" value={headline} onChange={(e) => setHeadline(e.target.value)} />
+                  </label>
+                  <label className="block">
+                    <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted)]">Bio</span>
+                    <textarea className="tm-input mt-1 min-h-24 resize-y" value={bio} onChange={(e) => setBio(e.target.value)} />
+                    <p className={`text-[10px] mt-1 ${bioWordCount > BIO_WORD_LIMIT ? "text-red-600" : "text-[var(--muted)]"}`}>
+                      {bioWordCount} / {BIO_WORD_LIMIT} words
+                    </p>
+                  </label>
+                </div>
+              </div>
 
-              <div className="space-y-3 border border-[var(--border)] p-4">
-                <p className="mono text-xs uppercase tracking-[0.2em]">Profile Photo</p>
+              <hr className="tm-divider" />
+
+              {/* Profile Photo */}
+              <div className="p-6">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] mb-4">Profile Photo</p>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                  <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--paper)]">
+                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden border border-[var(--border)] bg-[var(--paper)] shrink-0">
                     {avatarPreviewSrc ? (
                       <img src={avatarPreviewSrc} alt="Avatar preview" className="h-full w-full object-cover" />
                     ) : (
-                      <span className="mono text-xs uppercase text-[var(--muted)]">{initials}</span>
+                      <span className="text-[10px] uppercase text-[var(--muted)]">{initials}</span>
                     )}
                   </div>
-
                   <div className="flex-1 space-y-2">
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        className={`brutal-btn ${avatarKind === "url" ? "" : "bg-[var(--paper)]"}`}
+                        className={`tm-btn ${avatarKind === "url" ? "bg-[var(--foreground)] text-[var(--background)]" : ""}`}
                         onClick={() => setAvatarKind("url")}
                       >
                         URL
                       </button>
                       <button
                         type="button"
-                        className={`brutal-btn ${avatarKind === "upload" ? "" : "bg-[var(--paper)]"}`}
+                        className={`tm-btn ${avatarKind === "upload" ? "bg-[var(--foreground)] text-[var(--background)]" : ""}`}
                         onClick={() => setAvatarKind("upload")}
                       >
                         Upload
                       </button>
                     </div>
                     {avatarKind === "url" ? (
-                      <input className="brutal-input" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} placeholder="https://..." />
+                      <input className="tm-input" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://..." />
                     ) : (
-                      <input className="brutal-input" type="file" accept="image/*" onChange={(event) => setAvatarFile(event.target.files?.[0] ?? null)} />
+                      <input className="tm-input" type="file" accept="image/*" onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)} />
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3 border border-[var(--border)] p-4">
-                <p className="mono text-xs uppercase tracking-[0.2em]">Social Links</p>
+              <hr className="tm-divider" />
+
+              {/* Social Links */}
+              <div className="p-6">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] mb-4">Social Links</p>
                 <div className="grid gap-3 md:grid-cols-2">
                   {ALL_SOCIALS.map((platform) => (
-                    <label key={platform} className="text-sm font-semibold">
-                      {socialLabel(platform)}
+                    <label key={platform} className="block">
+                      <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted)]">{socialLabel(platform)}</span>
                       <input
-                        className="brutal-input mt-1"
+                        className="tm-input mt-1"
                         value={socials[platform]}
-                        onChange={(event) => updateSocial(platform, event.target.value)}
+                        onChange={(e) => updateSocial(platform, e.target.value)}
                         placeholder={platform === "email" ? "you@nyu.edu" : "https://..."}
                       />
                     </label>
                   ))}
                 </div>
-                <p className="mono text-xs text-[var(--muted)]">Only X, LinkedIn, Email, and GitHub are accepted.</p>
+                <p className="text-[10px] text-[var(--muted)] mt-3">X, LinkedIn, Email, and GitHub are required.</p>
               </div>
 
-              <button type="button" className="brutal-btn" onClick={saveRevision} disabled={loading}>
-                Submit Revision
-              </button>
-            </article>
+              <hr className="tm-divider" />
 
-            <aside className="space-y-5">
-              <article className="brutal-card space-y-3 p-6">
-                <h3 className="text-xl font-black">Connections</h3>
+              <div className="p-6">
+                <button type="button" className="tm-btn" onClick={saveRevision} disabled={loading}>
+                  {loading ? "Submitting..." : "Submit Revision"}
+                </button>
+              </div>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-px bg-[var(--border)]">
+              {/* Connections */}
+              <div className="tm-card p-6">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] mb-4">Connections</p>
                 <input
-                  className="brutal-input"
-                  placeholder="Search members"
+                  className="tm-input mb-3"
+                  placeholder="Search members..."
                   value={connectionSearch}
-                  onChange={(event) => setConnectionSearch(event.target.value)}
+                  onChange={(e) => setConnectionSearch(e.target.value)}
                 />
-                <div className="max-h-48 space-y-2 overflow-y-auto border-2 border-[var(--border)] p-2">
-                  {(options ?? []).map((option) => (
-                    <label key={`conn-${option.id}`} className="flex items-center gap-2 text-sm">
+                <div className="max-h-48 overflow-y-auto border border-[var(--border)] mb-3">
+                  {(options ?? []).filter((option) => option.id !== self.profile._id).map((option) => (
+                    <label key={`conn-${option.id}`} className="flex items-start gap-2 px-3 py-2 border-b border-[var(--border-light)] last:border-none hover:bg-[var(--hover-bg)] cursor-pointer">
                       <input
                         type="checkbox"
+                        className="mt-0.5 shrink-0"
                         checked={selectedConnections.includes(option.id)}
                         onChange={() => toggleConnection(option.id)}
-                        disabled={option.id === self.profile._id}
                       />
                       <span>
-                        {option.fullName}
-                        <span className="block text-xs text-[var(--muted)]">{option.major}</span>
-                        {option.website ? <span className="block text-xs text-[var(--muted)]">{option.website}</span> : null}
+                        <span className="text-xs text-[var(--foreground)] block">{option.fullName}</span>
+                        <span className="text-[10px] text-[var(--muted)]">{option.major}</span>
                       </span>
                     </label>
                   ))}
                 </div>
-                <button type="button" className="brutal-btn" onClick={saveConnections} disabled={loading}>
+                <button type="button" className="tm-btn" onClick={saveConnections} disabled={loading}>
                   Save Connections
                 </button>
-              </article>
+              </div>
 
-              <article className="brutal-card space-y-3 p-6">
-                <h3 className="text-xl font-black">Top-5 Vouches</h3>
-                <p className="mono text-xs text-[var(--muted)]">Selected: {selectedVouches.length}/5</p>
-                <div className="max-h-48 space-y-2 overflow-y-auto border-2 border-[var(--border)] p-2">
-                  {(options ?? []).map((option) => (
-                    <label key={`vouch-${option.id}`} className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={selectedVouches.includes(option.id)} onChange={() => toggleVouch(option.id)} disabled={option.id === self.profile._id} />
+              {/* Top-5 Vouches */}
+              <div className="tm-card p-6">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] mb-1">Top-5 Vouches</p>
+                <p className="text-[10px] text-[var(--muted)] mb-4">{selectedVouches.length} / 5 selected</p>
+                <div className="max-h-48 overflow-y-auto border border-[var(--border)] mb-3">
+                  {(options ?? []).filter((option) => option.id !== self.profile._id).map((option) => (
+                    <label key={`vouch-${option.id}`} className="flex items-start gap-2 px-3 py-2 border-b border-[var(--border-light)] last:border-none hover:bg-[var(--hover-bg)] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 shrink-0"
+                        checked={selectedVouches.includes(option.id)}
+                        onChange={() => toggleVouch(option.id)}
+                      />
                       <span>
-                        {option.fullName}
-                        <span className="block text-xs text-[var(--muted)]">{option.major}</span>
-                        {option.website ? <span className="block text-xs text-[var(--muted)]">{option.website}</span> : null}
+                        <span className="text-xs text-[var(--foreground)] block">{option.fullName}</span>
+                        <span className="text-[10px] text-[var(--muted)]">{option.major}</span>
                       </span>
                     </label>
                   ))}
                 </div>
-                <button type="button" className="brutal-btn" onClick={saveVouches} disabled={loading}>
-                  Save Top-5
+                <button type="button" className="tm-btn" onClick={saveVouches} disabled={loading}>
+                  Save Vouches
                 </button>
-              </article>
+              </div>
 
-              <article className="brutal-card space-y-3 p-6">
-                <h3 className="text-xl font-black">Password</h3>
-                <p className="mono text-xs text-[var(--muted)]">Change your member login password.</p>
-                <label className="block text-sm font-semibold">
-                  Current password
-                  <input
-                    className="brutal-input mt-1"
-                    type="password"
-                    value={currentPassword}
-                    onChange={(event) => setCurrentPassword(event.target.value)}
-                    minLength={8}
-                  />
-                </label>
-                <label className="block text-sm font-semibold">
-                  New password
-                  <input
-                    className="brutal-input mt-1"
-                    type="password"
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                    minLength={8}
-                  />
-                </label>
-                <label className="block text-sm font-semibold">
-                  Confirm new password
-                  <input
-                    className="brutal-input mt-1"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    minLength={8}
-                  />
-                </label>
-                <button type="button" className="brutal-btn" onClick={savePassword} disabled={loading}>
+              {/* Password */}
+              <div className="tm-card p-6">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] mb-4">Change Password</p>
+                <div className="space-y-3">
+                  <label className="block">
+                    <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted)]">Current Password</span>
+                    <input
+                      className="tm-input mt-1"
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      minLength={8}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted)]">New Password</span>
+                    <input
+                      className="tm-input mt-1"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      minLength={8}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted)]">Confirm New Password</span>
+                    <input
+                      className="tm-input mt-1"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      minLength={8}
+                    />
+                  </label>
+                </div>
+                <button type="button" className="tm-btn mt-4" onClick={savePassword} disabled={loading}>
                   Update Password
                 </button>
-              </article>
-            </aside>
+              </div>
+            </div>
           </div>
 
-          {message ? <p className="text-sm text-[var(--success)]">{message}</p> : null}
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {/* Status messages */}
+          {message ? (
+            <div className="tm-card p-4">
+              <p className="text-xs text-[var(--success)]">{message}</p>
+            </div>
+          ) : null}
+          {error ? (
+            <div className="tm-card p-4">
+              <p className="text-xs text-red-600">{error}</p>
+            </div>
+          ) : null}
         </>
       ) : null}
-    </section>
+    </div>
   );
 }
