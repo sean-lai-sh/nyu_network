@@ -77,6 +77,31 @@ interface ApplyPayload {
 }
 
 const SOCIAL_PLATFORMS = ["x", "linkedin", "email", "github"] as const;
+type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
+type OptionalLinkField = SocialPlatform | "website";
+
+const TEMPLATE_PLACEHOLDER_PATTERNS: Record<OptionalLinkField, RegExp[]> = {
+  website: [/^(?:https?:\/\/)?(?:www\.)?yoursite\.com\/?$/i],
+  x: [/^(?:https?:\/\/)?(?:www\.)?(?:x\.com|twitter\.com)\/you\/?$/i],
+  linkedin: [/^(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/you\/?$/i],
+  github: [/^(?:https?:\/\/)?(?:www\.)?github\.com\/you\/?$/i],
+  email: [/^(?:mailto:)?you@nyu\.edu$/i],
+};
+
+function normalizeOptionalString(value?: string): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function isTemplatePlaceholder(field: OptionalLinkField, value: string): boolean {
+  return TEMPLATE_PLACEHOLDER_PATTERNS[field].some((pattern) => pattern.test(value));
+}
+
+function sanitizeOptionalLink(field: OptionalLinkField, value?: string): string | undefined {
+  const normalized = normalizeOptionalString(value);
+  if (!normalized) return undefined;
+  return isTemplatePlaceholder(field, normalized) ? undefined : normalized;
+}
 
 export async function POST(req: NextRequest) {
   let body: ApplyPayload;
@@ -103,9 +128,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const sanitizedWebsite = sanitizeOptionalLink("website", body.website);
   const socials = body.socials ?? {};
   const providedSocials = SOCIAL_PLATFORMS.flatMap((platform) => {
-    const url = socials[platform]?.trim();
+    const url = sanitizeOptionalLink(platform, socials[platform]);
     return url ? [{ platform, url }] : [];
   });
   if (providedSocials.length === 0) {
@@ -139,7 +165,7 @@ export async function POST(req: NextRequest) {
       email: body.email,
       fullName: body.fullName,
       major: body.major,
-      website: body.website || undefined,
+      website: sanitizedWebsite,
       bio: body.bio || undefined,
       avatarKind,
       avatarUrl,

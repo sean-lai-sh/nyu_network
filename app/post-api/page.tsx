@@ -52,6 +52,7 @@ export default function PostApiPage() {
   const [body, setBody] = useState("");
   const [response, setResponse] = useState<string | null>(null);
   const [responseOk, setResponseOk] = useState(false);
+  const [submitNotice, setSubmitNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const [sending, setSending] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");
   const [origin, setOrigin] = useState("");
@@ -79,6 +80,12 @@ export default function PostApiPage() {
     setPreviewUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [pendingFile]);
+
+  useEffect(() => {
+    if (!submitNotice) return;
+    const timeout = setTimeout(() => setSubmitNotice(null), 2500);
+    return () => clearTimeout(timeout);
+  }, [submitNotice]);
 
   const filteredMembers = useMemo(() => {
     if (!allProfiles) return [];
@@ -129,6 +136,7 @@ export default function PostApiPage() {
 
   const submit = async () => {
     setResponse(null);
+    setSubmitNotice(null);
     setSending(true);
     try {
       // Extract JSON body from curl command, strip comments, parse
@@ -143,6 +151,7 @@ export default function PostApiPage() {
       } catch {
         setResponse("// ERROR: Invalid JSON in request body. Check your syntax.");
         setResponseOk(false);
+        setSubmitNotice({ kind: "error", text: "Invalid JSON body." });
         return;
       }
 
@@ -162,15 +171,18 @@ export default function PostApiPage() {
       if (res.ok) {
         setResponse(`// SUCCESS\n${JSON.stringify(data, null, 2)}`);
         setResponseOk(true);
+        setSubmitNotice({ kind: "success", text: `${res.status} success: request went through.` });
         setBody(buildTemplate(origin));
         setPendingFile(null);
       } else {
         setResponse(`// ERROR ${res.status}\n${JSON.stringify(data, null, 2)}`);
         setResponseOk(false);
+        setSubmitNotice({ kind: "error", text: `${res.status} error: request failed.` });
       }
     } catch {
       setResponse("// ERROR: Network request failed.");
       setResponseOk(false);
+      setSubmitNotice({ kind: "error", text: "Network request failed." });
     } finally {
       setSending(false);
     }
@@ -233,6 +245,17 @@ export default function PostApiPage() {
           >
             {sending ? "sending..." : "send request"}
           </button>
+          {submitNotice && (
+            <div
+              className={`mt-3 inline-block border-2 border-[var(--ink)] px-3 py-1 text-xs font-black ${
+                submitNotice.kind === "success"
+                  ? "bg-[#dfffe9] text-[#0c5a2a]"
+                  : "bg-[#ffe2e2] text-[#7a1717]"
+              }`}
+            >
+              {submitNotice.text}
+            </div>
+          )}
 
           {response && (
             <pre className={`postapi-response ${responseOk ? "postapi-response-ok" : "postapi-response-err"}`}>
