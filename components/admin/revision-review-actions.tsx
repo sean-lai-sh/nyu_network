@@ -8,36 +8,43 @@ import { api } from "@/convex/_generated/api";
 export const RevisionReviewActions = ({ revisionId }: { revisionId: string }) => {
   const router = useRouter();
   const review = useMutation(api.admin.reviewRevision);
-  const [loading, setLoading] = useState(false);
+  const [pending, setPending] = useState<"approve" | "reject" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const decide = async (decision: "approve" | "reject") => {
-    setLoading(true);
+    setPending(decision);
     setError(null);
     try {
-      await review({
-        revisionId: revisionId as any,
-        decision
-      });
+      await review({ revisionId: revisionId as any, decision });
       router.refresh();
     } catch (reviewError) {
       setError(reviewError instanceof Error ? reviewError.message : "Review failed.");
     } finally {
-      setLoading(false);
+      setPending(null);
     }
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 shrink-0">
       <div className="flex gap-2">
-        <button type="button" className="brutal-btn" disabled={loading} onClick={() => decide("approve")}>
-          Approve
+        <button
+          type="button"
+          className="tm-btn tm-btn-approve"
+          disabled={pending !== null}
+          onClick={() => decide("approve")}
+        >
+          {pending === "approve" ? "approving..." : "Approve"}
         </button>
-        <button type="button" className="brutal-btn bg-[var(--paper)]" disabled={loading} onClick={() => decide("reject")}>
-          Reject
+        <button
+          type="button"
+          className="tm-btn tm-btn-reject"
+          disabled={pending !== null}
+          onClick={() => decide("reject")}
+        >
+          {pending === "reject" ? "rejecting..." : "Reject"}
         </button>
       </div>
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="text-[10px] text-red-600">{error}</p> : null}
     </div>
   );
 };
