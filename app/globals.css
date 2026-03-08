@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 /* ===== Waterloo-style theme variables ===== */
 :root {
@@ -109,50 +109,15 @@ a {
 }
 
 /* ===== Home Terminal Typography ===== */
-.terminal-landing,
-.terminal-landing .top-nav a,
-.terminal-landing .title,
-.terminal-landing .description,
-.terminal-landing .join-link,
-.terminal-landing .search-input,
-.terminal-landing .search-clear-btn,
-.terminal-landing .search-results-info,
-.terminal-landing .members-table th,
-.terminal-landing .members-table td,
-.terminal-landing .name-link,
-.terminal-landing .site-link,
-.terminal-landing .social-icon-link {
-  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', 'Courier New', monospace;
-}
-
 .terminal-landing .title {
-  font-family: 'Space Mono', 'Roboto Mono', 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .terminal-landing .description {
-  font-size: 0.94rem;
-  line-height: 1.7;
-}
-
-.terminal-landing .members-table th {
   font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.terminal-landing .members-table td {
-  font-size: 0.9rem;
-}
-
-.terminal-landing .search-input,
-.terminal-landing .search-clear-btn,
-.terminal-landing .search-results-info {
-  font-size: 0.82rem;
-  letter-spacing: 0.02em;
+  line-height: 1.6;
 }
 
 @media (min-width: 1024px) {
