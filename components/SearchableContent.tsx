@@ -129,19 +129,18 @@ export default function SearchableContent() {
                         <h1 className="title">nyu.network</h1>
                     </div>
                     <div className="description">
-                        <p>welcome to the network for nyu students.</p>
+                        <p>welcome to the official webring for new york university students.</p>
                         <p>
-                            our school is home to some of the most talented engineers, builders, makers,
-                            artists, designers, writers, and everything in between. this is a place to
-                            find other cool people who also go to nyu, a directory of the people
-                            who actually make this place special.
+                            our school is home to some of the most talented engineers, researchers,
+                            builders, creators, artists, designers, and everything in between. this is a place to
+                            find them, a directory of the people who make this place special.
                         </p>
                         <p>
-                            want to join? <a
+                            want to join?{' '}<a
                                 href="/post-api"
                                 className="join-link"
                             >
-                                send a POST request
+                                submit a POST request
                             </a>
                         </p>
                     </div>
