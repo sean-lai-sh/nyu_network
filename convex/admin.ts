@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getAuthEmail, getAuthUserId, requireAdmin } from "./lib/authz";
 import { markGraphDirty } from "./lib/graphState";
 import { assertSocialRequirements, normalizeSocials } from "./lib/socials";
@@ -185,6 +186,7 @@ export const reviewApplication = mutation({
     });
 
     await markGraphDirty(ctx);
+    await ctx.scheduler.runAfter(0, internal.indexing.indexProfile, { profileId });
 
     await ctx.db.insert("audit_log", {
       actorAuthUserId: adminUserId,
@@ -321,6 +323,7 @@ export const reviewRevision = mutation({
     });
 
     await markGraphDirty(ctx);
+    await ctx.scheduler.runAfter(0, internal.indexing.indexProfile, { profileId: revision.profileId });
 
     await ctx.db.insert("audit_log", {
       actorAuthUserId: adminUserId,

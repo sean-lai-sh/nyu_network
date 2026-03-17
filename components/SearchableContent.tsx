@@ -30,6 +30,8 @@ export default function SearchableContent() {
     const [graphData, setGraphData] = useState<GraphSnapshot | null>(null);
     const [shuffledOnce, setShuffledOnce] = useState(false);
     const [shuffleOrder, setShuffleOrder] = useState<string[]>([]);
+    const [semanticResults, setSemanticResults] = useState<MemberRow[] | null>(null);
+    const [semanticLoading, setSemanticLoading] = useState(false);
 
     const allProfiles = useQuery(api.search.listProfiles, {});
     const profileSocialRows = useQuery(api.search.listProfileSocials, {});
@@ -54,6 +56,38 @@ export default function SearchableContent() {
             .catch(err => console.error('Failed to fetch graph:', err));
     }, []);
 
+    // Semantic search with 300ms debounce
+    useEffect(() => {
+        if (!searchQuery) {
+            setSemanticResults(null);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            setSemanticLoading(true);
+            try {
+                const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+                const data = await res.json();
+                const rows: MemberRow[] = (data.profiles ?? []).map((p: any) => ({
+                    id: p.id,
+                    fullName: p.fullName,
+                    major: p.major,
+                    website: p.website ?? undefined,
+                    headline: p.headline ?? undefined,
+                    avatarUrl: p.avatarUrl ?? undefined,
+                    fireScore: 0,
+                    socials: p.socials ?? [],
+                }));
+                setSemanticResults(rows);
+            } catch (err) {
+                console.error('Semantic search error:', err);
+                setSemanticResults(null);
+            } finally {
+                setSemanticLoading(false);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     // Shuffle order once when profiles first load
     useEffect(() => {
         if (allProfiles && allProfiles.length > 0 && !shuffledOnce) {
@@ -63,9 +97,14 @@ export default function SearchableContent() {
     }, [allProfiles, shuffledOnce]);
 
     const filteredMembers: MemberRow[] = useMemo(() => {
+        // Use semantic results when a search is active and results are ready
+        if (searchQuery && semanticResults !== null) {
+            return semanticResults;
+        }
+
         if (!allProfiles) return [];
 
-        let result = allProfiles.map((p): MemberRow => ({
+        const result = allProfiles.map((p): MemberRow => ({
             id: p.id,
             fullName: p.fullName,
             major: p.major,
@@ -82,18 +121,8 @@ export default function SearchableContent() {
             result.sort((a, b) => (orderMap.get(a.id) ?? 999) - (orderMap.get(b.id) ?? 999));
         }
 
-        if (searchQuery) {
-            const q = searchQuery.toLowerCase();
-            result = result.filter(member =>
-                member.fullName.toLowerCase().includes(q) ||
-                member.major.toLowerCase().includes(q) ||
-                member.website?.toLowerCase().includes(q) ||
-                member.headline?.toLowerCase().includes(q)
-            );
-        }
-
         return result;
-    }, [allProfiles, searchQuery, shuffleOrder, socialsByProfileId]);
+    }, [allProfiles, searchQuery, semanticResults, shuffleOrder, socialsByProfileId]);
 
     const filteredMemberIds = new Set<string>(filteredMembers.map(m => m.id));
 
@@ -162,7 +191,8 @@ export default function SearchableContent() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="search-input"
                         />
-                        {searchQuery && (
+                        {semanticLoading && <span className="search-loading">...</span>}
+                        {searchQuery && !semanticLoading && (
                             <button
                                 onClick={() => setSearchQuery('')}
                                 className="search-clear-btn"

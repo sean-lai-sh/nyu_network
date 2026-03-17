@@ -2,6 +2,36 @@ import { v } from "convex/values";
 import { query } from "./_generated/server";
 import { resolveProfileAvatarUrl } from "./lib/avatar";
 
+export const getProfileBySlug = query({
+  args: { slug: v.string() },
+  handler: async (ctx, { slug }) => {
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .first();
+    if (!profile) return null;
+    const [socials, avatarUrl] = await Promise.all([
+      ctx.db
+        .query("profile_social_links")
+        .withIndex("by_profile", (q) => q.eq("profileId", profile._id))
+        .collect(),
+      resolveProfileAvatarUrl(ctx, profile)
+    ]);
+    return {
+      id: profile._id,
+      slug: profile.slug,
+      fullName: profile.fullName,
+      major: profile.major,
+      website: profile.website,
+      headline: profile.headline,
+      bio: profile.bio,
+      school: profile.school,
+      avatarUrl,
+      socials: socials.map((s) => ({ platform: s.platform, url: s.url }))
+    };
+  }
+});
+
 export const listProfiles = query({
   args: {
     q: v.optional(v.string())

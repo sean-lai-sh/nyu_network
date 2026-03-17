@@ -977,6 +977,373 @@ a {
   font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', 'Courier New', monospace;
 }
 
+/* ===== Arch Watermark (admin + profile pages only) ===== */
+.arch-watermark {
+  position: fixed;
+  bottom: -5%;
+  right: -5%;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 9px;
+  line-height: 1.35;
+  white-space: pre;
+  color: var(--accent);
+  opacity: 0.07;
+  letter-spacing: 0.04em;
+  transform: scale(1.2);
+  transform-origin: bottom right;
+}
+
+[data-theme='dark'] .arch-watermark {
+  opacity: 0.14;
+}
+
+/* ===== Tech Minimalism (admin + profile pages) ===== */
+.tm-page {
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', 'Courier New', monospace;
+}
+
+.tm-card {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+@keyframes tm-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.7; }
+}
+
+.tm-skeleton {
+  background: var(--border);
+  animation: tm-pulse 1.6s ease-in-out infinite;
+  border-radius: 2px;
+}
+
+.tm-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+.tm-btn {
+  display: inline-block;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: var(--foreground);
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.tm-btn:hover:not(:disabled) {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.tm-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.tm-btn-approve {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.tm-btn-approve:hover:not(:disabled) {
+  background: var(--success);
+  color: #fff;
+}
+
+.tm-btn-reject {
+  color: var(--muted-red);
+  border-color: var(--muted-red);
+}
+
+.tm-btn-reject:hover:not(:disabled) {
+  background: var(--muted-red);
+  color: #fff;
+}
+
+.tm-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--foreground);
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+  font-size: 0.8rem;
+  padding: 0.5rem 0.75rem;
+  outline: none;
+  transition: border-color 0.15s;
+  border-radius: 0;
+}
+
+.tm-input:focus {
+  border-color: var(--accent);
+}
+
+.tm-input::placeholder {
+  color: var(--muted);
+}
+
+.tm-ascii {
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 9px;
+  line-height: 1.35;
+  white-space: pre;
+  color: var(--accent);
+  opacity: 0.38;
+  user-select: none;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+[data-theme='dark'] .tm-ascii {
+  opacity: 0.55;
+}
+
+/* ===== Sign-in Page ===== */
+@keyframes signin-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.signin-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+}
+
+.signin-card {
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.signin-header {
+  padding: 1.5rem 1.75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  animation: signin-reveal 0.35s ease both;
+}
+
+.signin-body {
+  padding: 1.75rem;
+  animation: signin-reveal 0.35s ease both;
+  animation-delay: 0.07s;
+}
+
+.signin-footer {
+  padding: 1rem 1.75rem;
+  border-top: 1px solid var(--border);
+  animation: signin-reveal 0.35s ease both;
+  animation-delay: 0.14s;
+}
+
+.signin-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 0.85em;
+  background: var(--accent);
+  vertical-align: text-bottom;
+  animation: cursor-blink 1.1s step-end infinite;
+  margin-right: 0.4rem;
+  flex-shrink: 0;
+}
+
+/* ===== Admin Dashboard Layout ===== */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+}
+
+.admin-sidebar {
+  width: 210px;
+  min-width: 210px;
+  border-right: 1px solid var(--border);
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.admin-sidebar-brand {
+  padding: 1.5rem 1.25rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-sidebar-eyebrow {
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+.admin-sidebar-name {
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--foreground);
+  line-height: 1.2;
+}
+
+.admin-sidebar-nav {
+  padding: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.admin-nav-section {
+  padding: 0.75rem 1.25rem 0.35rem;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 0.48rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.55rem 1.25rem;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.12s, background 0.12s;
+  border-left: 2px solid transparent;
+}
+
+.admin-nav-item:hover {
+  color: var(--foreground);
+  background: var(--hover-bg);
+}
+
+.admin-nav-item-active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.admin-main {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+    min-width: unset;
+    height: auto;
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .admin-sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0;
+  }
+
+  .admin-nav-section {
+    display: none;
+  }
+
+  .admin-nav-item {
+    padding: 0.75rem 1rem;
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .admin-nav-item-active {
+    border-left-color: transparent;
+    border-bottom-color: var(--accent);
+    background: transparent;
+  }
+}
+
+/* ===== Me Page Tab Bar ===== */
+.me-tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.me-tab {
+  padding: 0.9rem 1.4rem;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.12s;
+}
+
+.me-tab:hover {
+  color: var(--foreground);
+}
+
+.me-tab-active {
+  color: var(--foreground);
+  border-bottom-color: var(--accent);
+}
+
+/* ===== Admin Overview Cards ===== */
+.admin-overview-card {
+  display: block;
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  transition: background 0.12s;
+}
+
+.admin-overview-card:hover {
+  background: var(--hover-bg);
+}
+
 /* ===== POST API Page ===== */
 .postapi-page {
   max-width: 1200px;

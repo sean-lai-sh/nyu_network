@@ -1,9 +1,3 @@
-"use client";
-
-import Link from "next/link";
-import { FormEvent, useState } from "react";
-import { authClient } from "@/lib/auth-client";
-
 const WSA = `      ::......::......::..........:..............:.............::.........::.......::......:.
      .-----------------------------------------------------------------------------:--:::::---:.
       .:::::::.::..:..::::::::-::-:-::-:::-::-::::-::--::-::::::::::::-:::::--:::-------------.
@@ -65,121 +59,11 @@ const WSA = `      ::......::......::..........:..............:.............::..
   ...:.-:-.:......-.--::::..- :                                     :.::.::.::-.:......:.:-:::-..
 ..:::::-:-:--------.----::..-.:.....................................:.-..:-:---:-::::::-:---::-::...`;
 
-export default function SignInPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const onSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setError(null);
-    setMessage(null);
-    setLoading(true);
-
-    try {
-      const response = await authClient.signIn.email({
-        email,
-        password,
-        callbackURL: "/me"
-      });
-
-      if (response.error) {
-        setError(response.error.message ?? "Unable to sign in.");
-      } else {
-        setMessage("Authenticated. Redirecting...");
-      }
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unexpected auth error.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+export default function MeLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <pre className="arch-watermark" aria-hidden="true">{WSA}</pre>
-      <div className="signin-page tm-page" style={{ position: "relative", zIndex: 1 }}>
-        <div className="signin-card">
-
-          {/* Header */}
-          <div className="signin-header">
-            <p className="text-[9px] uppercase tracking-[0.35em] text-[var(--muted)] mb-3">
-              NYU Network
-            </p>
-            <div className="flex items-center">
-              <span className="signin-cursor" aria-hidden="true" />
-              <h1 className="text-sm font-bold uppercase tracking-[0.1em]">
-                Member Access
-              </h1>
-            </div>
-          </div>
-
-          {/* Form body */}
-          <div className="signin-body">
-            <form className="space-y-4" onSubmit={onSubmit}>
-              <label className="block">
-                <span className="text-[9px] uppercase tracking-[0.2em] text-[var(--muted)] block mb-1.5">
-                  Identifier
-                </span>
-                <input
-                  className="tm-input"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@nyu.edu"
-                  autoComplete="email"
-                  required
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-[9px] uppercase tracking-[0.2em] text-[var(--muted)] block mb-1.5">
-                  Passphrase
-                </span>
-                <input
-                  className="tm-input"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  minLength={8}
-                  autoComplete="current-password"
-                  required
-                />
-              </label>
-
-              <div className="pt-1">
-                <button
-                  type="submit"
-                  className="tm-btn block w-full text-center"
-                  disabled={loading}
-                >
-                  {loading ? "Authenticating..." : "Authenticate →"}
-                </button>
-              </div>
-            </form>
-
-            {message ? (
-              <p className="text-[11px] text-[var(--success)] mt-4">{message}</p>
-            ) : null}
-            {error ? (
-              <p className="text-[11px] text-red-600 mt-4">{error}</p>
-            ) : null}
-          </div>
-
-          {/* Footer */}
-          <div className="signin-footer">
-            <Link
-              href="/post-api"
-              className="text-[10px] text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
-            >
-              Not approved? → POST /api/apply
-            </Link>
-          </div>
-
-        </div>
-      </div>
+      <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
     </>
   );
 }
