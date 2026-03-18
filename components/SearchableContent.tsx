@@ -119,8 +119,7 @@ export default function SearchableContent() {
         <main className="main-container terminal-landing">
             <AsciiFlame />
             <nav className="top-nav">
-                <a href="/admin">admin</a>
-                <a href="/me">profile</a>
+                <a href="/profile">profile</a>
                 <a href="/sign-in">sign in</a>
             </nav>
             <div className="content-wrapper">
@@ -133,7 +132,7 @@ export default function SearchableContent() {
                         <p>
                             our school is home to some of the most talented engineers, researchers,
                             builders, creators, artists, designers, and everything in between. this is a place to
-                            find them, a directory of the people who make this place special.
+                            find them, a directory of the people who make this place special. members will be invited to various vc dinners, events, or other hangs.
                         </p>
                         <p>
                             want to join?{' '}<a

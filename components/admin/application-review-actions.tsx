@@ -15,10 +15,7 @@ export const ApplicationReviewActions = ({ applicationId }: { applicationId: str
     setLoading(true);
     setError(null);
     try {
-      await review({
-        applicationId: applicationId as any,
-        decision
-      });
+      await review({ applicationId: applicationId as any, decision });
       router.refresh();
     } catch (reviewError) {
       setError(reviewError instanceof Error ? reviewError.message : "Review failed.");
@@ -28,16 +25,16 @@ export const ApplicationReviewActions = ({ applicationId }: { applicationId: str
   };
 
   return (
-    <div className="space-y-2">
-      <div className="flex gap-2">
-        <button type="button" className="brutal-btn" disabled={loading} onClick={() => decide("approve")}>
+    <div>
+      <div className="adm-actions">
+        <button type="button" className="adm-btn-approve" disabled={loading} onClick={() => decide("approve")}>
           Approve
         </button>
-        <button type="button" className="brutal-btn bg-[var(--paper)]" disabled={loading} onClick={() => decide("reject")}>
+        <button type="button" className="adm-btn-reject" disabled={loading} onClick={() => decide("reject")}>
           Reject
         </button>
       </div>
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="adm-action-error">{error}</p> : null}
     </div>
   );
 };

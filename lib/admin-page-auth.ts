@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { fetchAuthQuery } from "@/lib/auth-server";
 
@@ -10,6 +10,6 @@ export const requireAdminPageAccess = async () => {
     }
     return viewer;
   } catch {
-    notFound();
+    redirect("/sign-in");
   }
 };

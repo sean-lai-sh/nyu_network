@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { api } from "@/convex/_generated/api";
 import { fetchAuthQuery } from "@/lib/auth-server";
 import { ApplicationReviewActions } from "@/components/admin/application-review-actions";
@@ -12,66 +13,97 @@ export default async function AdminApplicationsPage() {
   try {
     rows = await fetchAuthQuery(api.admin.listPendingApplications, {});
   } catch (fetchError) {
-    error = fetchError instanceof Error ? fetchError.message : "Unable to load admin applications.";
-  }
-
-  if (error) {
-    return (
-      <section className="brutal-card p-6">
-        <h2 className="text-3xl font-black">Admin Applications</h2>
-        <p className="mt-3 text-sm text-red-600">{error}</p>
-      </section>
-    );
+    error = fetchError instanceof Error ? fetchError.message : "Unable to load applications.";
   }
 
   return (
-    <section className="space-y-4">
-      <div className="brutal-card p-6">
-        <p className="mono text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Admin</p>
-        <h2 className="text-3xl font-black">Pending Applications</h2>
+    <div className="adm-page">
+      <header className="adm-header">
+        <div className="adm-header-left">
+          <Link href="/admin" className="adm-back-link">← admin</Link>
+          <span className="adm-header-sep">/</span>
+          <span className="adm-header-title">
+            applications
+            {rows ? <span className="adm-badge">{rows.length}</span> : null}
+          </span>
+        </div>
+      </header>
+
+      <div className="adm-body">
+        {error ? (
+          <p className="adm-error">{error}</p>
+        ) : rows?.length === 0 ? (
+          <p className="adm-empty">No pending applications.</p>
+        ) : (
+          rows?.map((row) => (
+            <article key={row.application._id} className="adm-card">
+              <div className="adm-card-header">
+                <div>
+                  <p className="adm-card-name">{row.application.fullName}</p>
+                  <div className="adm-card-meta">
+                    <span>{row.application.email}</span>
+                    <span className="adm-card-meta-accent">{row.application.major}</span>
+                    {row.application.website ? <span>{row.application.website}</span> : null}
+                  </div>
+                  {row.application.headline ? (
+                    <p style={{ fontSize: "0.85rem", color: "var(--secondary)", marginTop: "0.35rem" }}>
+                      {row.application.headline}
+                    </p>
+                  ) : null}
+                </div>
+                <ApplicationReviewActions applicationId={row.application._id} />
+              </div>
+
+              {(row.application.bio || row.socials?.length > 0 || row.connectionTargets?.length >= 0) ? (
+                <>
+                  <hr className="adm-divider" />
+                  <div className="adm-card-body">
+                    {row.application.bio ? (
+                      <div>
+                        <p className="adm-section-label">bio</p>
+                        <p className="adm-bio">{row.application.bio}</p>
+                      </div>
+                    ) : null}
+
+                    <div className="adm-card-grid">
+                      <div>
+                        <p className="adm-section-label">socials</p>
+                        {row.socials?.length > 0 ? (
+                          <ul className="adm-list">
+                            {row.socials.map((social: any) => (
+                              <li key={social._id} className="adm-list-item">
+                                <span className="adm-list-key">{social.platform}</span>
+                                <span>{social.url}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="adm-list-empty">No socials provided.</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="adm-section-label">connection intents</p>
+                        {row.connectionTargets?.length > 0 ? (
+                          <ul className="adm-list">
+                            {row.connectionTargets.map((target: any) => (
+                              <li key={target.id} className="adm-list-item">
+                                <span>{target.fullName}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="adm-list-empty">No connections selected.</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+            </article>
+          ))
+        )}
       </div>
-
-      {rows?.length === 0 ? <p className="text-sm text-[var(--muted)]">No pending applications.</p> : null}
-
-      {rows?.map((row) => (
-        <article key={row.application._id} className="brutal-card space-y-3 p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h3 className="text-xl font-black">{row.application.fullName}</h3>
-              <p className="mono text-xs text-[var(--muted)]">{row.application.email}</p>
-              <p className="mono text-xs text-[var(--accent)]">{row.application.major}</p>
-              {row.application.website ? <p className="mono text-xs text-[var(--muted)]">{row.application.website}</p> : null}
-              {row.application.headline ? <p className="text-sm text-[var(--muted)]">{row.application.headline}</p> : null}
-            </div>
-            <ApplicationReviewActions applicationId={row.application._id} />
-          </div>
-
-          {row.application.bio ? <p className="text-sm">{row.application.bio}</p> : null}
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <p className="mono mb-2 text-xs uppercase">Socials</p>
-              <ul className="space-y-1 text-sm">
-                {row.socials.map((social: any) => (
-                  <li key={social._id}>
-                    <strong>{social.platform}</strong>: {social.url}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <p className="mono mb-2 text-xs uppercase">Apply Connection Intents</p>
-              <ul className="space-y-1 text-sm">
-                {row.connectionTargets.map((target: any) => (
-                  <li key={target.id}>{target.fullName}</li>
-                ))}
-                {row.connectionTargets.length === 0 ? <li className="text-[var(--muted)]">No selected connections.</li> : null}
-              </ul>
-            </div>
-          </div>
-        </article>
-      ))}
-    </section>
+    </div>
   );
 }

@@ -1,94 +1,35 @@
-# NYU Network (Next.js + Convex + Better Auth)
+# NYU Network
 
-Pixel-brutalist light-mode member graph with pending applications, admin moderation, profile revisions, connections, top-5 vouches, and cached graph snapshots.
+NYU Network is a curated talent graph of top NYU students at a given point in time.
 
-## Features
+The product is built for two primary audiences:
 
-- Public `/apply` intake with socials + initial connection picks
-- Pending-only intake: nothing becomes live until admin approval
-- Better Auth email/password login integrated with Convex
-- Member dashboard for:
-  - profile revision submissions (admin approval required)
-  - directed connections
-  - top-5 unranked vouches
-- Admin queues:
-  - `/admin/applications`
-  - `/admin/revisions`
-- Public graph and search:
-  - `GET /api/graph` serves cached current snapshot
-  - search sorted by fire score (unique voucher count desc)
-- Graph snapshot cron rebuild every minute when dirty
+- VCs looking for high-upside student founders and operators
+- Founders looking to hire exceptional early talent from NYU
 
-## Setup
+## What The Application Does
 
-1. Install dependencies:
+NYU Network maps people and relationships, not just static resumes.
 
-```bash
-bun install
-```
+At a high level, the app:
 
-2. Copy envs:
+- Curates a vetted set of student profiles
+- Captures meaningful signals around credibility and momentum
+- Visualizes the network as a living graph
+- Makes discovery fast for investors and hiring teams
 
-```bash
-cp .env.example .env.local
-```
+## Why It Exists
 
-Set these required values:
+Finding the right student talent is usually fragmented across clubs, referrals, and social feeds.
+NYU Network centralizes that process into one trusted surface focused on quality over volume.
 
-- `NEXT_PUBLIC_CONVEX_URL`
-- `NEXT_PUBLIC_CONVEX_SITE_URL`
-- `CONVEX_DEPLOYMENT`
-- `BETTER_AUTH_URL`
-- `BETTER_AUTH_SECRET`
+## Product Principles
 
-3. Configure Convex:
+- Curated, not open-directory
+- Relationship-driven, not keyword-driven
+- Current and actively maintained
+- Built for real hiring and investment workflows
 
-```bash
-bun run dev:convex
-```
+## Core Outcome
 
-Make sure Convex env also has these values:
-
-- `BETTER_AUTH_URL`
-- `BETTER_AUTH_SECRET`
-
-4. Run app + Convex together:
-
-```bash
-bun run dev
-```
-
-## Admin bootstrap
-
-After deploying auth and signing in once, seed an admin allowlist email using:
-
-- Convex mutation: `adminBootstrap:seedAllowlist`
-- args: `{ "email": "you@nyu.edu", "secret": "<ADMIN_BOOTSTRAP_SECRET>" }`
-
-Then use `/admin/applications` and `/admin/revisions`.
-
-Or create a full admin login + allowlist in one call:
-
-- Convex mutation: `adminBootstrap:seedAdminAccount`
-- args: `{ "secret": "<ADMIN_BOOTSTRAP_SECRET>", "email": "you@nyu.edu", "name": "Admin Name", "password": "your-password" }`
-
-Seed demo members (Sean + Chris) and credential accounts:
-
-- Convex mutation: `adminBootstrap:seedPeople`
-- args: `{ "secret": "<ADMIN_BOOTSTRAP_SECRET>" }`
-- Returns example passwords in the mutation result for local MVP/testing.
-
-## Key architecture notes
-
-- `/apply` writes only to pending application tables.
-- Approval creates live `profiles` rows and materializes apply connection intents.
-- `profiles` table stores approved live profiles only.
-- Graph reads do not run expensive joins per request; they use `graph_snapshots`.
-
-## Snapshot freshness
-
-- `graph_meta.dirtySince` is set on approval/revision/connection/vouch changes.
-- Cron (`convex/crons.ts`) rebuilds if dirty and last build is older than 60 seconds.
-- API route returns cache headers:
-  - `s-maxage=300`
-  - `stale-while-revalidate=300`
+A continuously maintained snapshot of the strongest student network at NYU, usable by people making high-trust decisions on hiring and backing founders.
