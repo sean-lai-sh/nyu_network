@@ -236,6 +236,20 @@ export const submitRevision = mutation({
   }
 });
 
+export const getIncomingConnections = query({
+  args: {},
+  handler: async (ctx) => {
+    const { profile } = await requireApprovedMember(ctx);
+
+    const incoming = await ctx.db
+      .query("connections")
+      .withIndex("by_target", (q) => q.eq("targetProfileId", profile._id))
+      .collect();
+
+    return incoming.map((c) => c.sourceProfileId);
+  }
+});
+
 export const setConnections = mutation({
   args: {
     targetProfileIds: v.array(v.id("profiles"))
