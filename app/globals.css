@@ -1305,6 +1305,17 @@ a {
 
 .adm-header-left { display: flex; align-items: center; gap: 0.75rem; }
 .adm-header-sep { color: var(--border); font-size: 0.8rem; }
+.adm-signout-btn {
+  font-size: 0.8rem;
+  color: var(--secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  transition: color 0.15s;
+}
+.adm-signout-btn:hover { color: var(--foreground); }
 
 .adm-back-link {
   font-size: 0.78rem;

@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
-export default function SignInPage() {
+export default function AdminSignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +16,7 @@ export default function SignInPage() {
 
   useEffect(() => {
     if (!isPending && session?.user) {
-      router.replace("/profile");
+      router.replace("/admin");
     }
   }, [isPending, session, router]);
 
@@ -29,7 +29,7 @@ export default function SignInPage() {
       const response = await authClient.signIn.email({
         email,
         password,
-        callbackURL: "/sign-in",
+        callbackURL: "/admin-signin",
       });
 
       if (response.error) {
@@ -156,16 +156,6 @@ export default function SignInPage() {
           line-height: 1.6;
         }
 
-        .si-error a {
-          color: #be98ee;
-          text-decoration: underline;
-          text-underline-offset: 3px;
-        }
-
-        .si-error a:hover {
-          color: #d6b6ff;
-        }
-
         .si-footer {
           margin-top: 1.35rem;
           border-top: 1px solid #2a2a35;
@@ -203,7 +193,7 @@ export default function SignInPage() {
       <div className="si-page">
         <div className="si-wrap">
           <h1 className="si-heading">nyu.network</h1>
-          <p className="si-subhead">member sign in</p>
+          <p className="si-subhead">admin sign in</p>
 
           <form onSubmit={onSubmit} className="si-form">
             <label className="si-label">
@@ -238,10 +228,7 @@ export default function SignInPage() {
 
           {error && (
             <p className="si-error">
-              those credentials weren't recognized. if you haven't applied yet or
-              are still awaiting approval, you won't have access until your
-              application is accepted.{" "}
-              <Link href="/post-api">apply for membership</Link>
+              those credentials weren't recognized.
             </p>
           )}
 

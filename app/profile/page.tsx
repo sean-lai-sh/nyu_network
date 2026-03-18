@@ -440,9 +440,9 @@ export default function ProfilePage() {
         socials: normalizedSocials,
       });
 
-      setMessage("Revision submitted and pending admin approval.");
+      setMessage("Profile updated.");
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to submit revision.");
+      setError(saveError instanceof Error ? saveError.message : "Failed to save profile.");
     } finally {
       setLoading(false);
     }
@@ -695,19 +695,6 @@ export default function ProfilePage() {
                     />
                   </div>
 
-                  {self.pendingRevision ? (
-                    <div className="pro-pending-badge">
-                      <span className="pro-pending-dot" />
-                      <span>
-                        Pending revision — submitted{" "}
-                        {new Date(self.pendingRevision.createdAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </span>
-                    </div>
-                  ) : null}
                 </section>
 
                 <div className="pro-submit-area">
@@ -717,9 +704,8 @@ export default function ProfilePage() {
                     onClick={saveRevision}
                     disabled={loading}
                   >
-                    {loading ? "Submitting..." : "Submit for Review"}
+                    {loading ? "Saving..." : "Save Changes"}
                   </button>
-                  <p className="pro-submit-hint">Changes await admin approval before going live.</p>
 
                   {message ? <p className="pro-status-ok">{message}</p> : null}
                   {error ? <p className="pro-status-err">{error}</p> : null}

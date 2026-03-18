@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
-import { getAuthEmail, getAuthUserId, requireAdmin } from "./lib/authz";
+import { getAuthEmail, getAuthUserId, requireAdmin, requireAuthUser } from "./lib/authz";
 import { markGraphDirty } from "./lib/graphState";
 import { assertSocialRequirements, normalizeSocials } from "./lib/socials";
 
@@ -9,13 +9,25 @@ export const getAdminViewer = query({
   args: {},
   handler: async (ctx) => {
     try {
-      const user = await requireAdmin(ctx);
+      const user = await requireAuthUser(ctx);
+      const email = getAuthEmail(user);
+      const isAdmin = email
+        ? Boolean(
+            await ctx.db
+              .query("admin_allowlist")
+              .withIndex("by_email", (q) => q.eq("email", email))
+              .first()
+          )
+        : false;
+
       return {
-        isAdmin: true as const,
-        email: getAuthEmail(user)
+        isAuthenticated: true as const,
+        isAdmin,
+        email
       };
     } catch {
       return {
+        isAuthenticated: false as const,
         isAdmin: false as const
       };
     }

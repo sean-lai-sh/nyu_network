@@ -80,22 +80,13 @@ export const getSelf = query({
       .withIndex("by_voucher", (q) => q.eq("voucherProfileId", profile._id))
       .collect();
 
-    const pendingRevision = await ctx.db
-      .query("profile_revisions")
-      .withIndex("by_profile", (q) => q.eq("profileId", profile._id))
-      .collect();
-
-    const latestPending = pendingRevision
-      .filter((revision) => revision.status === "pending")
-      .sort((a, b) => b.createdAt - a.createdAt)[0];
-
     return {
       authUserId,
       profile,
       socials,
       connectionTargetIds: connections.map((connection) => connection.targetProfileId),
       vouchTargetIds: vouches.map((vouch) => vouch.targetProfileId),
-      pendingRevision: latestPending ?? null
+      pendingRevision: null
     };
   }
 });
@@ -115,8 +106,9 @@ export const submitRevision = mutation({
   handler: async (ctx, args) => {
     const { profile, authUser } = await requireApprovedMember(ctx);
     const authUserId = getAuthUserId(authUser);
+    const now = Date.now();
 
-    let normalizedSocials = args.socials ? normalizeSocials(args.socials) : undefined;
+    const normalizedSocials = args.socials ? normalizeSocials(args.socials) : undefined;
     if (normalizedSocials) {
       assertSocialRequirements(normalizedSocials);
     }
@@ -143,38 +135,82 @@ export const submitRevision = mutation({
     const bio = args.bio?.trim();
     assertBioWordLimit(bio);
 
-    const payload = {
-      fullName: args.fullName?.trim() || undefined,
-      major: args.major?.trim() || undefined,
-      website: args.website?.trim() || undefined,
-      headline: args.headline?.trim() || undefined,
-      bio: bio || undefined,
-      avatarKind: args.avatarKind,
-      avatarUrl: args.avatarUrl?.trim() || undefined,
-      avatarStorageId: args.avatarStorageId,
-      socials: normalizedSocials
+    let resolvedAvatarUrl = args.avatarUrl?.trim() || undefined;
+    if (args.avatarKind === "upload" && args.avatarStorageId) {
+      resolvedAvatarUrl = (await ctx.storage.getUrl(args.avatarStorageId)) ?? undefined;
+    }
+
+    const nextProfile = {
+      fullName: args.fullName?.trim() || profile.fullName,
+      major: args.major?.trim() || profile.major,
+      website: args.website?.trim() || profile.website,
+      headline: args.headline?.trim() || profile.headline,
+      bio: bio || profile.bio,
+      avatarKind: args.avatarKind ?? profile.avatarKind,
+      avatarUrl: resolvedAvatarUrl ?? profile.avatarUrl,
+      avatarStorageId: args.avatarStorageId ?? profile.avatarStorageId
     };
 
-    const revisionId = await ctx.db.insert("profile_revisions", {
-      profileId: profile._id,
-      submittedByAuthUserId: authUserId,
-      payload,
-      status: "pending",
-      createdAt: Date.now()
+    const changedFields = [
+      nextProfile.fullName !== profile.fullName ? "fullName" : null,
+      nextProfile.major !== profile.major ? "major" : null,
+      nextProfile.website !== profile.website ? "website" : null,
+      nextProfile.headline !== profile.headline ? "headline" : null,
+      nextProfile.bio !== profile.bio ? "bio" : null,
+      nextProfile.avatarKind !== profile.avatarKind ? "avatarKind" : null,
+      nextProfile.avatarUrl !== profile.avatarUrl ? "avatarUrl" : null,
+      nextProfile.avatarStorageId !== profile.avatarStorageId ? "avatarStorageId" : null
+    ].filter((field): field is string => Boolean(field));
+
+    await ctx.db.patch(profile._id, {
+      ...nextProfile,
+      updatedAt: now
     });
+
+    if (normalizedSocials) {
+      const existingSocials = await ctx.db
+        .query("profile_social_links")
+        .withIndex("by_profile", (q) => q.eq("profileId", profile._id))
+        .collect();
+
+      for (const social of existingSocials) {
+        await ctx.db.delete(social._id);
+      }
+
+      for (const social of normalizedSocials) {
+        await ctx.db.insert("profile_social_links", {
+          profileId: profile._id,
+          platform: social.platform,
+          url: social.url,
+          createdAt: now
+        });
+      }
+      changedFields.push("socials");
+    }
+
+    const shouldQueueGraphRefresh =
+      nextProfile.fullName !== profile.fullName ||
+      nextProfile.avatarKind !== profile.avatarKind ||
+      nextProfile.avatarUrl !== profile.avatarUrl ||
+      nextProfile.avatarStorageId !== profile.avatarStorageId;
+
+    if (shouldQueueGraphRefresh) {
+      await markGraphDirty(ctx);
+    }
 
     await ctx.db.insert("audit_log", {
       actorAuthUserId: authUserId,
-      action: "profile.revision.submit",
-      entityType: "profile_revision",
-      entityId: revisionId,
+      action: "profile.update",
+      entityType: "profile",
+      entityId: profile._id,
       metadata: {
-        profileId: profile._id
+        changedFields,
+        graphRefreshQueued: shouldQueueGraphRefresh
       },
-      createdAt: Date.now()
+      createdAt: now
     });
 
-    return { revisionId };
+    return { success: true };
   }
 });
 

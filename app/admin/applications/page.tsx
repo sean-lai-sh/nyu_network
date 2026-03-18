@@ -1,20 +1,32 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery } from "convex/react";
+import { authClient } from "@/lib/auth-client";
 import { api } from "@/convex/_generated/api";
-import { fetchAuthQuery } from "@/lib/auth-server";
 import { ApplicationReviewActions } from "@/components/admin/application-review-actions";
-import { requireAdminPageAccess } from "@/lib/admin-page-auth";
 
-export default async function AdminApplicationsPage() {
-  await requireAdminPageAccess();
+export default function AdminApplicationsPage() {
+  const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
+  const adminViewer = useQuery(api.admin.getAdminViewer, session?.user ? {} : "skip");
+  const rows = useQuery(api.admin.listPendingApplications, adminViewer?.isAdmin ? {} : "skip");
 
-  let rows: any[] | null = null;
-  let error: string | null = null;
+  useEffect(() => {
+    if (isPending) return;
+    if (!session?.user) {
+      router.replace("/admin-signin");
+      return;
+    }
+    if (adminViewer === undefined) return;
+    if (!adminViewer.isAdmin) {
+      router.replace("/admin-signin");
+    }
+  }, [isPending, session, adminViewer, router]);
 
-  try {
-    rows = await fetchAuthQuery(api.admin.listPendingApplications, {});
-  } catch (fetchError) {
-    error = fetchError instanceof Error ? fetchError.message : "Unable to load applications.";
-  }
+  if (isPending || !session?.user || !adminViewer?.isAdmin) return null;
 
   return (
     <div className="adm-page">
@@ -30,12 +42,10 @@ export default async function AdminApplicationsPage() {
       </header>
 
       <div className="adm-body">
-        {error ? (
-          <p className="adm-error">{error}</p>
-        ) : rows?.length === 0 ? (
+        {rows === undefined ? null : rows.length === 0 ? (
           <p className="adm-empty">No pending applications.</p>
         ) : (
-          rows?.map((row) => (
+          rows.map((row) => (
             <article key={row.application._id} className="adm-card">
               <div className="adm-card-header">
                 <div>

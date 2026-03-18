@@ -1,8 +1,35 @@
-import Link from "next/link";
-import { requireAdminPageAccess } from "@/lib/admin-page-auth";
+"use client";
 
-export default async function AdminLandingPage() {
-  await requireAdminPageAccess();
+import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery } from "convex/react";
+import { authClient } from "@/lib/auth-client";
+import { api } from "@/convex/_generated/api";
+
+export default function AdminLandingPage() {
+  const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
+  const adminViewer = useQuery(api.admin.getAdminViewer, session?.user ? {} : "skip");
+
+  useEffect(() => {
+    if (isPending) return;
+    if (!session?.user) {
+      router.replace("/admin-signin");
+      return;
+    }
+    if (adminViewer === undefined) return;
+    if (!adminViewer.isAdmin) {
+      router.replace("/admin-signin");
+    }
+  }, [isPending, session, adminViewer, router]);
+
+  const signOut = async () => {
+    await authClient.signOut();
+    router.replace("/");
+  };
+
+  if (isPending || !session?.user || !adminViewer?.isAdmin) return null;
 
   return (
     <div className="adm-page">
@@ -12,6 +39,7 @@ export default async function AdminLandingPage() {
           <span className="adm-header-sep">/</span>
           <span className="adm-header-title">admin</span>
         </div>
+        <button onClick={signOut} className="adm-signout-btn">sign out</button>
       </header>
 
       <div className="adm-body">
