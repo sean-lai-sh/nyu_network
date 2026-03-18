@@ -6,7 +6,6 @@ const convexSiteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL ?? process.env.CON
 if (!convexUrl) {
   throw new Error("Missing Convex URL. Set NEXT_PUBLIC_CONVEX_URL (or CONVEX_URL) in your Next.js environment.");
 }
-
 if (!convexSiteUrl) {
   throw new Error("Missing Convex Site URL. Set NEXT_PUBLIC_CONVEX_SITE_URL (or CONVEX_SITE_URL) in your Next.js environment.");
 }
