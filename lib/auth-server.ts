@@ -22,4 +22,4 @@ export const {
 } = convexBetterAuthNextJs({
   convexUrl,
   convexSiteUrl
-});
+}); 
