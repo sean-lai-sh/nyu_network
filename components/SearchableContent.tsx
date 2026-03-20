@@ -120,7 +120,7 @@ export default function SearchableContent() {
             <div className="content-wrapper">
                 <div className="header-section">
                     <div className="title-row">
-                        <h1 className="title">nyu.network</h1>
+                        <h1 className="title">nyuniversity.network</h1>
                     </div>
                     <div className="description">
                         <p>welcome to the official webring for new york university students.</p>

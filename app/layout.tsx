@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
 export const metadata: Metadata = {
-  title: "nyu.network",
+  title: "nyuniversity.network",
   description: "A network for NYU students",
 };
 

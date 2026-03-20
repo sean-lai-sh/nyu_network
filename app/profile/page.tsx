@@ -249,7 +249,7 @@ export default function ProfilePage() {
           {/* Real header — back link always usable */}
           <header className="pro-header">
             <div className="pro-header-left">
-              <Link href="/" className="pro-back-link">← nyu.network</Link>
+              <Link href="/" className="pro-back-link">← nyuniversity.network</Link>
             </div>
             <div className="pro-header-center">
               <div className="pro-skeleton-block pro-skel-avatar" />
@@ -509,7 +509,7 @@ export default function ProfilePage() {
         <header className="pro-header">
           <div className="pro-header-left">
             <Link href="/" className="pro-back-link">
-              ← nyu.network
+              ← nyuniversity.network
             </Link>
           </div>
 

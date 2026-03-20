@@ -35,7 +35,7 @@ export default function AdminLandingPage() {
     <div className="adm-page">
       <header className="adm-header">
         <div className="adm-header-left">
-          <Link href="/" className="adm-back-link">← nyu.network</Link>
+          <Link href="/" className="adm-back-link">← nyuniversity.network</Link>
           <span className="adm-header-sep">/</span>
           <span className="adm-header-title">admin</span>
         </div>

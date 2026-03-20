@@ -202,7 +202,7 @@ export default function SignInPage() {
 
       <div className="si-page">
         <div className="si-wrap">
-          <h1 className="si-heading">nyu.network</h1>
+          <h1 className="si-heading">nyuniversity.network</h1>
           <p className="si-subhead">member sign in</p>
 
           <form onSubmit={onSubmit} className="si-form">
