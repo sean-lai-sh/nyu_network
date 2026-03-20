@@ -59,6 +59,28 @@ export const ensureMemberAccount = mutation({
   }
 });
 
+export const checkApprovedEmail = query({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const email = args.email.trim().toLowerCase();
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
+
+    if (!profile || profile.status !== "approved") {
+      return { approved: false, alreadyClaimed: false };
+    }
+
+    const linked = await ctx.db
+      .query("member_accounts")
+      .withIndex("by_profile", (q) => q.eq("profileId", profile._id))
+      .first();
+
+    return { approved: true, alreadyClaimed: Boolean(linked) };
+  }
+});
+
 export const getSelf = query({
   args: {},
   handler: async (ctx) => {
@@ -211,6 +233,20 @@ export const submitRevision = mutation({
     });
 
     return { success: true };
+  }
+});
+
+export const getIncomingConnections = query({
+  args: {},
+  handler: async (ctx) => {
+    const { profile } = await requireApprovedMember(ctx);
+
+    const incoming = await ctx.db
+      .query("connections")
+      .withIndex("by_target", (q) => q.eq("targetProfileId", profile._id))
+      .collect();
+
+    return incoming.map((c) => c.sourceProfileId);
   }
 });
 

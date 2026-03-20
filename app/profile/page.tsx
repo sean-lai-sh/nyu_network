@@ -74,14 +74,16 @@ const TABS: { key: Tab; label: string }[] = [
 
 // ─── Chip ─────────────────────────────────────────────────────────────────────
 
-function Chip({ label, initials, onRemove }: { label: string; initials: string; onRemove: () => void }) {
+function Chip({ label, initials, onRemove }: { label: string; initials: string; onRemove?: () => void }) {
   return (
     <span className="pro-chip">
       <span className="pro-chip-avatar">{initials}</span>
       <span className="pro-chip-label">{label}</span>
-      <button type="button" className="pro-chip-remove" onClick={onRemove} aria-label={`Remove ${label}`}>
-        ×
-      </button>
+      {onRemove && (
+        <button type="button" className="pro-chip-remove" onClick={onRemove} aria-label={`Remove ${label}`}>
+          ×
+        </button>
+      )}
     </span>
   );
 }
@@ -115,6 +117,7 @@ export default function ProfilePage() {
 
   const [connectionSearch, setConnectionSearch] = useState("");
   const [selectedConnections, setSelectedConnections] = useState<string[]>([]);
+  const [incomingConnectionIds, setIncomingConnectionIds] = useState<string[]>([]);
   const [selectedVouches, setSelectedVouches] = useState<string[]>([]);
 
   const [message, setMessage] = useState<string | null>(null);
@@ -160,6 +163,7 @@ export default function ProfilePage() {
   }, [ensureMemberAccount, session?.user, linkStatus]);
 
   const self = useQuery(api.member.getSelf, linkStatus === "linked" ? {} : "skip");
+  const incomingRaw = useQuery(api.member.getIncomingConnections, linkStatus === "linked" ? {} : "skip");
   const graphStatus = useQuery(api.graph.getCurrentStatus, {}) as GraphStatus | undefined;
   const options = useQuery(api.applications.searchApprovedConnections, {
     query: connectionSearch || undefined,
@@ -181,6 +185,10 @@ export default function ProfilePage() {
     setSelectedConnections(self.connectionTargetIds);
     setSelectedVouches(self.vouchTargetIds);
   }, [self]);
+
+  useEffect(() => {
+    if (incomingRaw) setIncomingConnectionIds(incomingRaw as string[]);
+  }, [incomingRaw]);
 
   // ── Avatar preview ──
   useEffect(() => {
@@ -487,11 +495,25 @@ export default function ProfilePage() {
 
   // ─── Derived data for connections/vouches display ─────────────────────────
 
-  // For chips: look up name from options if available, else use id
+  // All connected IDs: outgoing (you added them) + incoming (they added you), deduplicated
+  const allConnectedIds = useMemo(
+    () => Array.from(new Set([...selectedConnections, ...incomingConnectionIds])),
+    [selectedConnections, incomingConnectionIds]
+  );
+
+  // For chips: outgoing connections (removable)
   const connectionChips = selectedConnections.map((id) => {
     const opt = optionsMap.get(id);
     return { id, label: opt?.fullName ?? id, initials: getInitials(opt?.fullName ?? id) };
   });
+
+  // Incoming-only chips: they added you, you haven't added them back
+  const incomingOnlyChips = incomingConnectionIds
+    .filter((id) => !selectedConnections.includes(id))
+    .map((id) => {
+      const opt = optionsMap.get(id);
+      return { id, label: opt?.fullName ?? id, initials: getInitials(opt?.fullName ?? id) };
+    });
 
   const vouchChips = selectedVouches.map((id) => {
     const opt = optionsMap.get(id);
@@ -720,7 +742,7 @@ export default function ProfilePage() {
               <div className="pro-tab-header-row">
                 <div>
                   <h2 className="pro-section-title" style={{ marginBottom: 2 }}>Connections</h2>
-                  <p className="pro-hint">{selectedConnections.length} connection{selectedConnections.length !== 1 ? "s" : ""}</p>
+                  <p className="pro-hint">{allConnectedIds.length} connection{allConnectedIds.length !== 1 ? "s" : ""}</p>
                 </div>
                 {connectionSaving ? (
                   <span className="pro-save-indicator">Saving…</span>
@@ -730,7 +752,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Selected chips */}
-              {selectedConnections.length === 0 ? (
+              {allConnectedIds.length === 0 ? (
                 <p className="pro-empty-state">No connections yet — search below to add</p>
               ) : (
                 <div className="pro-chips-area">
@@ -740,6 +762,13 @@ export default function ProfilePage() {
                       label={c.label}
                       initials={c.initials}
                       onRemove={() => toggleConnection(c.id)}
+                    />
+                  ))}
+                  {incomingOnlyChips.map((c) => (
+                    <Chip
+                      key={c.id}
+                      label={`${c.label} ← added you`}
+                      initials={c.initials}
                     />
                   ))}
                 </div>
@@ -761,7 +790,9 @@ export default function ProfilePage() {
                 <div className="pro-search-results">
                   {optionsList.map((opt) => {
                     const isSelf = opt.id === self.profile._id;
-                    const isSelected = selectedConnections.includes(opt.id);
+                    const isOutgoing = selectedConnections.includes(opt.id);
+                    const isIncomingOnly = !isOutgoing && incomingConnectionIds.includes(opt.id);
+                    const isConnected = isOutgoing || isIncomingOnly;
                     return (
                       <div key={opt.id} className="pro-result-row">
                         <div className="pro-result-info">
@@ -773,12 +804,12 @@ export default function ProfilePage() {
                         </div>
                         <button
                           type="button"
-                          className={`pro-result-btn ${isSelected ? "pro-result-btn-selected" : ""}`}
-                          onClick={() => !isSelf && toggleConnection(opt.id)}
-                          disabled={isSelf}
-                          title={isSelf ? "This is you" : undefined}
+                          className={`pro-result-btn ${isConnected ? "pro-result-btn-selected" : ""}`}
+                          onClick={() => !isSelf && !isIncomingOnly && toggleConnection(opt.id)}
+                          disabled={isSelf || isIncomingOnly}
+                          title={isSelf ? "This is you" : isIncomingOnly ? "They connected to you" : undefined}
                         >
-                          {isSelected ? "✓ Added" : "+ Add"}
+                          {isOutgoing ? "✓ Added" : isIncomingOnly ? "✓ Connected" : "+ Add"}
                         </button>
                       </div>
                     );
